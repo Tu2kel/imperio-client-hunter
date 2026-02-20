@@ -1,0 +1,2121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SAM.gov Contract Scanner v4 - Imperio</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      :root {
+        --imperial-red: #8b0000;
+        --imperial-gold: #c5a130;
+        --dark-bg: #18181b;
+        --darker-bg: #0a0a0a;
+        --card-bg: #27272a;
+        --border-color: #3f3f46;
+        --text-primary: #f4f4f5;
+        --text-secondary: #a1a1aa;
+        --success: #22c55e;
+        --warning: #eab308;
+        --danger: #ef4444;
+        --blue: #3b82f6;
+        --blue-light: #93c5fd;
+        --hub-color: #a855f7;
+        --hub-light: #d8b4fe;
+        --tx-green: #10b981;
+      }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--dark-bg); color: var(--text-primary); line-height: 1.6; }
+      .serif-font { font-family: 'Cinzel', serif; }
+      .header { background: linear-gradient(to right, #7f1d1d, #450a0a); border-bottom: 2px solid var(--imperial-gold); padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 24px rgba(0,0,0,0.5); }
+      .header-content { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+      .header-title { font-size: 1.75rem; font-weight: 700; color: var(--imperial-gold); }
+      .header-subtitle { color: #d97706; font-size: 0.8rem; }
+      .header-actions { display: flex; align-items: center; gap: 0.5rem; }
+      .header-btn { padding: 0.4rem 0.875rem; background: rgba(197,161,48,0.1); border: 1px solid var(--imperial-gold); color: var(--imperial-gold); border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; text-decoration: none; white-space: nowrap; }
+      .header-btn:hover { background: rgba(197,161,48,0.25); }
+      .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+      .section { background: var(--card-bg); border: 1px solid #422006; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+      .section-title { font-size: 1.125rem; font-weight: 700; color: var(--imperial-gold); margin-bottom: 1rem; }
+      .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+      @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+      .stat-card { background: var(--card-bg); border: 1px solid #422006; border-radius: 0.5rem; padding: 1.25rem; text-align: center; }
+      .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--imperial-gold); margin-bottom: 0.25rem; }
+      .stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+      .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+      .btn-primary { background: var(--imperial-red); color: var(--imperial-gold); border-color: var(--imperial-gold); }
+      .btn-primary:hover { background: #991b1b; }
+      .btn-secondary { background: var(--card-bg); color: var(--text-primary); border-color: var(--border-color); }
+      .btn-secondary:hover { background: #3f3f46; }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+      .filter-group { display: flex; flex-direction: column; }
+      .filter-label { font-size: 0.75rem; font-weight: 500; color: #d1d5db; margin-bottom: 0.2rem; }
+      .filter-select, .filter-input { padding: 0.4rem 0.625rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-size: 0.8rem; }
+      .filter-select:focus, .filter-input:focus { outline: none; border-color: var(--imperial-gold); }
+      .opportunity-list { display: flex; flex-direction: column; gap: 0.875rem; }
+      .opportunity-card { background: #18181b; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.125rem; transition: all 0.2s; }
+      .opportunity-card:hover { border-color: var(--imperial-gold); box-shadow: 0 4px 12px rgba(197,161,48,0.1); }
+      .opportunity-card.new { border-left: 3px solid var(--success); }
+      .opportunity-card.urgent { border-left: 3px solid var(--danger); }
+      .opportunity-card.hub-card { border-left: 3px solid var(--hub-color); }
+      .opportunity-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.625rem; }
+      .opportunity-title { font-size: 1rem; font-weight: 600; color: var(--imperial-gold); margin-bottom: 0.2rem; }
+      .opportunity-solicitation { font-size: 0.8rem; color: var(--text-secondary); font-family: monospace; }
+      .opportunity-solicitation b { color: #22c55e; font-size: 0.9rem; letter-spacing: 0.5px; }
+      .opportunity-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.625rem; margin-bottom: 0.625rem; }
+      .meta-item { display: flex; flex-direction: column; }
+      .meta-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+      .meta-value { font-size: 0.8rem; color: var(--text-primary); font-weight: 500; }
+      .opportunity-description { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.625rem; }
+      .opportunity-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.625rem; }
+      .tag { padding: 0.2rem 0.625rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; font-size: 0.7rem; color: var(--text-secondary); }
+      .tag.sdvosb { background: rgba(34,197,94,0.1); border-color: var(--success); color: var(--success); }
+      .tag.open-market { background: rgba(234,179,8,0.1); border-color: var(--warning); color: var(--warning); }
+      .tag.urgent { background: rgba(239,68,68,0.1); border-color: var(--danger); color: var(--danger); }
+      .tag.hub { background: rgba(168,85,247,0.15); border-color: var(--hub-color); color: var(--hub-light); }
+      .tag.local { background: rgba(16,185,129,0.1); border-color: var(--tx-green); color: var(--tx-green); }
+      .opportunity-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+      .action-btn { padding: 0.3rem 0.625rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.25rem; color: var(--text-primary); font-size: 0.7rem; cursor: pointer; transition: all 0.2s; }
+      .action-btn:hover { border-color: var(--imperial-gold); color: var(--imperial-gold); }
+      .loading { text-align: center; padding: 3rem; color: var(--text-secondary); }
+      .spinner { width: 36px; height: 36px; border: 3px solid var(--border-color); border-top-color: var(--imperial-gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .empty-state { text-align: center; padding: 2.5rem; color: var(--text-secondary); }
+      .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+      .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; }
+      .status-badge.active { background: rgba(34,197,94,0.1); color: var(--success); }
+      .naics-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .naics-chip { padding: 0.4rem 0.875rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.5rem; font-size: 0.8rem; }
+      .naics-chip.priority-1 { border-left: 3px solid var(--success); background: rgba(34,197,94,0.05); }
+      .naics-chip.priority-2 { border-left: 3px solid var(--warning); background: rgba(234,179,8,0.05); }
+      .naics-chip.priority-3 { border-left: 3px solid var(--text-secondary); }
+      .naics-code { color: var(--imperial-gold); font-weight: 600; margin-right: 0.4rem; }
+      .naics-desc { color: var(--text-secondary); }
+      .alert { padding: 0.875rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid; }
+      .alert-success { background: rgba(34,197,94,0.1); border-color: var(--success); color: #86efac; }
+      .alert-hub { background: rgba(168,85,247,0.1); border-color: var(--hub-color); color: var(--hub-light); }
+      .progress-bar-wrap { width: 100%; height: 22px; background: #18181b; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 0.4rem; }
+      .progress-bar-fill { height: 100%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; }
+
+      /* HUB LAW CALLOUT BOX */
+      .hub-law-box { background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.4); border-left: 4px solid var(--hub-color); border-radius: 0.5rem; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+      .hub-law-title { color: var(--hub-light); font-weight: 700; font-size: 0.875rem; margin-bottom: 0.4rem; }
+      .hub-law-text { color: var(--text-secondary); font-size: 0.78rem; line-height: 1.6; }
+      .hub-law-text strong { color: var(--hub-light); }
+      .hub-goals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
+      .hub-goal-item { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.3); border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+      .hub-goal-agency { color: var(--hub-light); font-weight: 600; display: block; margin-bottom: 0.15rem; }
+      .hub-goal-pct { color: var(--text-primary); font-size: 1rem; font-weight: 700; }
+
+      /* CSV IMPORT DROP ZONE */
+      .csv-drop-zone { border: 2px dashed rgba(16,185,129,0.4); border-radius: 0.5rem; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(16,185,129,0.03); margin-bottom: 1rem; }
+      .csv-drop-zone:hover, .csv-drop-zone.drag-over { border-color: var(--tx-green); background: rgba(16,185,129,0.08); }
+      .csv-drop-zone-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+      .csv-drop-zone-text { color: var(--tx-green); font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
+      .csv-drop-zone-sub { color: var(--text-secondary); font-size: 0.75rem; }
+      .csv-import-result { padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 0.75rem; font-size: 0.8rem; }
+      .csv-import-result.success { background: rgba(34,197,94,0.1); border: 1px solid var(--success); color: #86efac; }
+      .csv-import-result.error { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: #fca5a5; }
+      .csv-import-result.warning { background: rgba(234,179,8,0.1); border: 1px solid var(--warning); color: #fde047; }
+      /* ESBD MANUAL ENTRY FORM */
+      .esbd-form-section { background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.25); border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.25rem; }
+      .esbd-form-title { color: var(--tx-green); font-weight: 700; font-size: 0.875rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+      .esbd-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.625rem; }
+      .esbd-form-group { display: flex; flex-direction: column; }
+      .esbd-form-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 0.2rem; }
+      .esbd-form-input, .esbd-form-select, .esbd-form-textarea { padding: 0.4rem 0.625rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-size: 0.8rem; }
+      .esbd-form-input:focus, .esbd-form-select:focus, .esbd-form-textarea:focus { outline: none; border-color: var(--tx-green); }
+      .esbd-form-textarea { resize: vertical; min-height: 60px; }
+      .esbd-form-full { grid-column: 1 / -1; }
+
+      /* -- KANBAN PIPELINE-- */
+      .kanban-board { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.75rem; min-height: 400px; }
+      .kanban-col { flex: 0 0 220px; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.5rem; display: flex; flex-direction: column; }
+      .kanban-col-header { padding: 0.75rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+      .kanban-col-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .kanban-col-count { font-size: 0.7rem; background: var(--card-bg); padding: 0.15rem 0.5rem; border-radius: 1rem; color: var(--text-secondary); }
+      .kanban-cards { flex: 1; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; max-height: 500px; }
+      .kanban-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.375rem; padding: 0.625rem; cursor: pointer; transition: all 0.2s; }
+      .kanban-card:hover { border-color: var(--imperial-gold); box-shadow: 0 2px 8px rgba(197,161,48,0.15); }
+      .kanban-card.stale { border-left: 3px solid var(--danger); }
+      .kanban-card-prime { font-size: 0.8rem; font-weight: 600; color: var(--imperial-gold); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .kanban-card-contract { font-size: 0.7rem; color: var(--text-secondary); font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .kanban-card-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 0.375rem; }
+      .kanban-card-value { font-size: 0.7rem; color: var(--success); font-weight: 600; }
+      .kanban-card-days { font-size: 0.65rem; color: var(--text-secondary); }
+      .kanban-card-days.stale { color: var(--danger); }
+      /* Stage colors */
+      .stage-identified { border-top: 3px solid #6366f1; }
+      .stage-identified .kanban-col-title { color: #818cf8; }
+      .stage-researching { border-top: 3px solid var(--blue); }
+      .stage-researching .kanban-col-title { color: var(--blue-light); }
+      .stage-outreach { border-top: 3px solid var(--warning); }
+      .stage-outreach .kanban-col-title { color: var(--warning); }
+      .stage-responded { border-top: 3px solid var(--imperial-gold); }
+      .stage-responded .kanban-col-title { color: var(--imperial-gold); }
+      .stage-proposal { border-top: 3px solid #f97316; }
+      .stage-proposal .kanban-col-title { color: #fb923c; }
+      .stage-closed { border-top: 3px solid var(--success); }
+      .stage-closed .kanban-col-title { color: var(--success); }
+      /* Lead modal */
+      .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+      .modal { background: var(--card-bg); border: 1px solid var(--imperial-gold); border-radius: 0.75rem; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; }
+      .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+      .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--imperial-gold); }
+      .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.25rem; cursor: pointer; padding: 0.25rem; }
+      .modal-close:hover { color: var(--text-primary); }
+      .modal-body { padding: 1.25rem 1.5rem; }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .form-group { display: flex; flex-direction: column; }
+      .form-group.full { grid-column: 1 / -1; }
+      .form-label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.3px; }
+      .form-input, .form-select, .form-textarea { padding: 0.5rem 0.625rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-size: 0.8rem; }
+      .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--imperial-gold); }
+      .form-textarea { resize: vertical; min-height: 70px; }
+      .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; justify-content: flex-end; }
+      .contact-log { margin-top: 0.75rem; }
+      .contact-log-entry { padding: 0.5rem 0.75rem; background: #18181b; border-radius: 0.375rem; border-left: 3px solid var(--border-color); margin-bottom: 0.4rem; font-size: 0.78rem; color: var(--text-secondary); }
+      .contact-log-entry .log-date { color: var(--imperial-gold); font-size: 0.7rem; font-weight: 600; margin-bottom: 0.15rem; }
+      /* CAP STATEMENT MODAL */
+      .cap-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+      .cap-modal { background: #fff; color: #111; border-radius: 0.5rem; width: 100%; max-width: 860px; max-height: 92vh; overflow-y: auto; }
+      .cap-modal-header { background: #8b0000; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+      .cap-modal-title { color: #c5a130; font-size: 1.1rem; font-weight: 700; font-family: 'Cinzel', serif; }
+      .cap-modal-close { background: none; border: none; color: #c5a130; font-size: 1.5rem; cursor: pointer; }
+      .cap-content { padding: 1.25rem 1.5rem; font-family: 'Courier New', monospace; font-size: 0.72rem; line-height: 1.5; white-space: pre-wrap; color: #222; }
+      .cap-actions { padding: 1rem 1.5rem; border-top: 1px solid #ddd; display: flex; gap: 0.5rem; justify-content: flex-end; }
+      .cap-btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; cursor: pointer; border: 1px solid; }
+      .cap-btn-primary { background: #8b0000; color: #c5a130; border-color: #c5a130; }
+      .cap-btn-secondary { background: #f5f5f5; color: #333; border-color: #ccc; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      // -- CONSTANTS
+      const IMPERIO_NAICS = [
+        { code: '424120', description: 'Office Supplies Merchant Wholesalers', priority: 1 },
+        { code: '423850', description: 'Service Establishment Equipment', priority: 1 },
+        { code: '423490', description: 'Other Professional Equipment & Supplies', priority: 1 },
+        { code: '423450', description: 'Medical/Dental/Hospital Equipment & Supplies', priority: 1 },
+        { code: '423720', description: 'Plumbing & Heating Equipment & Supplies (HVAC)', priority: 1 },
+        { code: '424990', description: 'Other Miscellaneous Nondurable Goods', priority: 1 },
+        { code: '492110', description: 'Couriers and Express Delivery Services', priority: 2 },
+        { code: '561311', description: 'Employment Placement Agencies', priority: 3 },
+        { code: '561320', description: 'Temporary Help Services (Staffing)', priority: 3 },
+        { code: '561110', description: 'Office Administrative Services', priority: 3 },
+        { code: '541519', description: 'Other Computer Related Services (IT/Cyber)', priority: 3 },
+        { code: '621111', description: 'Offices of Physicians (Medical Staffing)', priority: 3 },
+      ];
+
+      const IMPERIO_PSC = [
+        // PRIORITY 1 - OFFICE SUPPLIES (clean, no license required)
+        { code: '7510', description: 'Office Supplies', priority: 1 },
+        { code: '7520', description: 'Office Devices & Accessories', priority: 1 },
+        { code: '7530', description: 'Stationery & Related Items', priority: 1 },
+        // PRIORITY 1 - MEDICAL CONSUMABLES (disposable, no license needed)
+        { code: '6510', description: 'Drugs & Biologicals - Consumables', priority: 1 },
+        { code: '6532', description: 'Hospital & Surgical Clothing / PPE', priority: 1 },
+        { code: '6540', description: 'Medical & Surgical Supplies - Consumables', priority: 1 },
+        { code: '6545', description: 'Medical Sets, Kits & Outfits', priority: 1 },
+        // PRIORITY 1 - JANITORIAL & SANITATION (no license)
+        { code: '7930', description: 'Cleaning & Polishing Compounds', priority: 1 },
+        { code: '8125', description: 'Toiletries & Personal Care Items', priority: 1 },
+        // PRIORITY 2 - CLOTHING & PPE
+        { code: '8415', description: 'Clothing - Special Purpose', priority: 2 },
+        { code: '8410', description: 'Clothing - General', priority: 2 },
+        // PRIORITY 2 - HOSPITAL FURNITURE (verify no OEM req before bidding)
+        { code: '6530', description: 'Hospital Furniture - VERIFY No OEM Req', priority: 2 },
+        // PRIORITY 3 - SERVICES
+        { code: 'R497', description: 'Support - Professional Administrative', priority: 3 },
+        { code: 'R408', description: 'Support - Program Management', priority: 3 },
+        { code: 'V121', description: 'Transportation - Motor Pool Operations', priority: 3 },
+      ];
+
+      // -- TEXAS CLASS CODES (maps to PSC/NAICS)
+      const TEXAS_CLASS_CODES = [
+        { code: '760', description: 'Office Supplies & Accessories', priority: 1, mapsPSC: '7510', mapsNAICS: '424120' },
+        { code: '615', description: 'Medical & Surgical Supplies', priority: 1, mapsPSC: '6540', mapsNAICS: '423450' },
+        { code: '620', description: 'Hospital Equipment & Supplies', priority: 1, mapsPSC: '6530', mapsNAICS: '423450' },
+        { code: '730', description: 'Food Service Equipment', priority: 1, mapsPSC: '7310', mapsNAICS: '424990' },
+        { code: '485', description: 'Paper & Printing Supplies', priority: 2, mapsPSC: '7530', mapsNAICS: '424120' },
+        { code: '765', description: 'Safety & Security Equipment', priority: 2, mapsPSC: '4230', mapsNAICS: '423850' },
+        { code: '055', description: 'Janitorial & Cleaning Supplies', priority: 2, mapsPSC: '7510', mapsNAICS: '424990' },
+        { code: '340', description: 'IT Hardware & Peripherals', priority: 3, mapsPSC: 'D302', mapsNAICS: '541519' },
+      ];
+
+      // -- HUB GOALS BY AGENCY TYPE (Texas Gov Code §2161)
+      const HUB_GOALS = [
+        { agencyType: 'Heavy Construction', goal: '11.2%' },
+        { agencyType: 'Building Construction', goal: '21.1%' },
+        { agencyType: 'Special Trade', goal: '32.9%' },
+        { agencyType: 'Professional Services', goal: '23.7%' },
+        { agencyType: 'Other Services', goal: '26.0%' },
+        { agencyType: 'Commodities (Supplies)', goal: '21.1%' },
+      ];
+
+      // -- TEXAS REGIONS / PROXIMITY DATA
+      const TX_REGIONS = [
+        { id: 'central', label: 'Central TX (Temple/Austin/Waco)', counties: ['Bell','Travis','McLennan','Williamson','Hays','Bastrop','Burnet','Lampasas'] },
+        { id: 'dfw', label: 'DFW Metroplex', counties: ['Dallas','Tarrant','Collin','Denton','Ellis','Rockwall'] },
+        { id: 'houston', label: 'Houston Area', counties: ['Harris','Fort Bend','Montgomery','Brazoria','Galveston'] },
+        { id: 'sa', label: 'San Antonio Area', counties: ['Bexar','Comal','Guadalupe','Medina'] },
+        { id: 'statewide', label: 'Statewide / Multiple', counties: [] },
+      ];
+
+      const SAM_API_KEY = 'SAM-3b0dd3c9-aa37-4fbf-9682-78d452027cfa';
+
+      const KEYWORDS = [
+        'office supplies','office products','stationery','paper','toner',
+        'cartridge','printer supplies','folders','binders','breakroom',
+        'medical supplies','surgical supplies','consumables','gloves','gowns',
+        'masks','ppe','bandages','dressings','syringes','swabs','wipes',
+        'drapes','sterilization','disposable','single use',
+        'janitorial','cleaning supplies','cleaning','sanitation','disinfectant',
+        'trash bags','paper towels','soap',
+        'staffing','temporary help','administrative support',
+      ];
+
+      const PIPELINE_STAGES = [
+        { id: 'identified',  label: 'Identified',  weight: 0.05 },
+        { id: 'researching', label: 'Researching', weight: 0.10 },
+        { id: 'outreach',    label: 'Outreach Sent', weight: 0.20 },
+        { id: 'responded',   label: 'Responded',   weight: 0.40 },
+        { id: 'proposal',    label: 'Proposal/NDA', weight: 0.65 },
+        { id: 'closed',      label: 'Closed / Won', weight: 1.00 },
+      ];
+
+      // -- SCORING: FEDERAL SOLICITATIONS
+      function scoreOpportunity(opp, naicsPriMap, pscPriMap) {
+        const ourNaics = new Set(IMPERIO_NAICS.map(n => n.code));
+        const ourPsc   = new Set(IMPERIO_PSC.map(p => p.code));
+        let score = 0;
+        const text = ((opp.title||'') + ' ' + (opp.description||'')).toLowerCase();
+        if (ourNaics.has(opp.naicsCode)) { score += 40; if (naicsPriMap[opp.naicsCode]===1) score+=20; if (naicsPriMap[opp.naicsCode]===2) score+=10; }
+        if (ourPsc.has(opp.pscCode)) { score += 30; if (pscPriMap[opp.pscCode]===1) score+=15; }
+        if (opp.setAside && opp.setAside.includes('SDVOSB')) score += 25;
+        else if (opp.setAside && opp.setAside.includes('Small Business')) score += 10;
+        if (opp.state==='TX' || (opp.placeOfPerformance && opp.placeOfPerformance.includes('TX'))) score += 15;
+        score += KEYWORDS.filter(kw => text.includes(kw)).length * 5;
+        if (opp.responseDeadline) {
+          const days = Math.ceil((new Date(opp.responseDeadline) - new Date()) / 86400000);
+          if (days>=0 && days<=7) score+=20; else if (days>7 && days<=14) score+=10;
+        }
+        return score;
+      }
+
+      // -- SCORING: AWARDS
+      function scoreAward(award, naicsPriMap, pscPriMap) {
+        const ourNaics = new Set(IMPERIO_NAICS.map(n => n.code));
+        const ourPsc   = new Set(IMPERIO_PSC.map(p => p.code));
+        let score = 0;
+        const text = ((award.title||'') + ' ' + (award.description||'')).toLowerCase();
+        const val = parseValue(award.awardAmount);
+        if (ourNaics.has(award.naicsCode)) { score+=40; if (naicsPriMap[award.naicsCode]===1) score+=20; }
+        if (ourPsc.has(award.pscCode)) { score+=30; if (pscPriMap[award.pscCode]===1) score+=15; }
+        if (val>=500000 && val<5000000) score+=20; else if (val>=5000000 && val<25000000) score+=10;
+        const dept = (award.department||'').toLowerCase();
+        if (dept.includes('defense')||dept.includes('army')||dept.includes('navy')||dept.includes('air force')) score+=20;
+        if (dept.includes('veterans')) score+=20;
+        if (award.state==='TX') score+=15;
+        if (award.awardDate) { const ago=Math.floor((new Date()-new Date(award.awardDate))/86400000); if(ago<=30)score+=20;else if(ago<=60)score+=10; }
+        score += KEYWORDS.filter(kw => text.includes(kw)).length * 5;
+        return score;
+      }
+
+      // -- NIGP CODE → CLASS CODE + REGION MAPPING
+      const NIGP_TO_CLASS = {
+        '475': '760', '47500': '760', '47505': '760', '47506': '760', '47508': '760',
+        '47509': '760', '47510': '760', '47511': '760', '47512': '760', '47514': '760',
+        '47515': '760', '47516': '760', '47517': '760', '47518': '760', '47519': '760',
+        '47520': '760', '47521': '760', '47522': '760', '47524': '760', '47526': '760',
+        '47527': '760', '47528': '760', '47529': '760',
+        '615': '615', '61500': '615', '61505': '615', '61510': '615', '61515': '615',
+        '61520': '615', '61525': '615', '61530': '615', '61535': '615', '61540': '615',
+        '61545': '615', '61550': '615', '61555': '615', '61560': '615', '61565': '615',
+        '620': '620', '62000': '620', '62005': '620', '62010': '620', '62015': '620',
+        '62020': '620', '62025': '620', '62030': '620', '62035': '620',
+        '730': '730', '73000': '730', '73005': '730', '73010': '730', '73015': '730',
+        '73020': '730', '73025': '730', '73030': '730',
+        '485': '485', '48500': '485', '48505': '485', '48510': '485', '48515': '485',
+        '765': '765', '76500': '765', '76505': '765', '76510': '765',
+        '055': '055', '05500': '055', '05505': '055', '05510': '055',
+      };
+
+      // Agency number → region (common TX state agencies/universities)
+      const AGENCY_REGION = {
+        '720': 'central', // UT System
+        '721': 'central', // UT Austin
+        '754': 'central', // Texas State
+        '733': 'central', // Texas A&M
+        '781': 'central', // TX Dept of Criminal Justice (Huntsville)
+        '303': 'central', // TX Dept of State Health Services
+        '696': 'central', // TX Military Dept
+        '313': 'central', // TX Facilities Commission
+        '580': 'dfw',     // TX Dept of Transportation (Dallas dist)
+        '452': 'dfw',     // TX Workforce Commission
+        '608': 'houston', // TX Southern University
+        '736': 'sa',      // UTSA
+        '710': 'central', // TX Comptroller
+      };
+
+      // -- PARSE ESBD CSV (handles both solicitations and awards formats)
+      function parseESBDCsv(text, importType) {
+        const lines = text.trim().split('\n');
+        if (lines.length < 2) return { rows: [], errors: ['CSV appears empty'] };
+
+        const headers = parseCsvLine(lines[0]);
+        const h = headers.map(x => x.toLowerCase().trim());
+
+        // Detect format by checking for awards-specific columns
+        const isAwardsFormat = h.some(x => x.includes('po number') || x.includes('vendor name') || x.includes('po amount'));
+
+        const rows = [];
+        const errors = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          try {
+            const cols = parseCsvLine(lines[i]);
+            const get = (keywords) => {
+              const idx = h.findIndex(x => keywords.some(k => x.includes(k)));
+              return idx >= 0 ? (cols[idx] || '').trim() : '';
+            };
+
+            let title, bidNumber, dueDate, postedDate, agencyNum, status, nigpRaw,
+                vendorName, vendorEmail, vendorPhone, awardAmount;
+
+            if (isAwardsFormat) {
+              title       = get(['title','name']);
+              bidNumber   = get(['po number','contract number']);
+              awardAmount = get(['po amount','amount']);
+              agencyNum   = get(['agency']);
+              vendorName  = get(['vendor name']);
+              vendorPhone = get(['vendor contact','contact number']);
+              vendorEmail = get(['vendor email']);
+              postedDate  = parseMDY(get(['award date','date']));
+              nigpRaw     = get(['nigp']);
+              dueDate     = '';
+              status      = 'Awarded';
+            } else {
+              title      = get(['name','title']);
+              bidNumber  = get(['solicitation id']);
+              dueDate    = parseMDY(get(['due date']));
+              agencyNum  = get(['agency']);
+              status     = get(['status']);
+              postedDate = parseMDY(get(['posting date']));
+              nigpRaw    = get(['nigp']);
+            }
+
+            if (!title) continue;
+
+            // Parse NIGP codes
+            const nigpCodes = [];
+            const classCodes = [];
+            nigpRaw.split(';').forEach(segment => {
+              const match = segment.trim().match(/^(\d{3,6})/);
+              if (match) {
+                const code = match[1];
+                nigpCodes.push(code);
+                const classCode = NIGP_TO_CLASS[code] || NIGP_TO_CLASS[code.substring(0,3)];
+                if (classCode && !classCodes.includes(classCode)) classCodes.push(classCode);
+              }
+            });
+
+            // Clean up dollar amount
+            const cleanAmount = awardAmount ? '$' + awardAmount.replace(/[^0-9.]/g,'').replace(/^/, '') : '';
+
+            const region = AGENCY_REGION[agencyNum.trim()] || 'statewide';
+
+            const opp = {
+              noticeId: 'ESBD-' + (bidNumber || (title.substring(0,15) + i)).replace(/[^a-zA-Z0-9]/g,'-'),
+              source: 'ESBD',
+              sourceDetail: 'Texas Comptroller ESBD',
+              title: title,
+              agency: isAwardsFormat ? (vendorName || 'Agency #' + agencyNum) : 'Agency #' + agencyNum,
+              agencyNum: agencyNum,
+              agencyType: guessAgencyType(agencyNum, title),
+              bidNumber: bidNumber,
+              postedDate: postedDate,
+              dueDate: dueDate,
+              estimatedValue: isAwardsFormat ? cleanAmount : '',
+              classCodes,
+              nigpCodes,
+              hubRequired: false,
+              hubGoal: '',
+              hubDollarTarget: 0,
+              location: 'Texas',
+              region,
+              description: '',
+              contactName: isAwardsFormat ? vendorName : '',
+              contactEmail: isAwardsFormat ? vendorEmail : '',
+              contactPhone: isAwardsFormat ? vendorPhone : '',
+              solicitationUrl: bidNumber ? 'https://www.txsmartbuy.gov/esbd/' + bidNumber.trim() : '',
+              reviewed: false,
+              flagged: false,
+              importType: importType,
+              addedDate: new Date().toISOString(),
+              status: status,
+            };
+            opp.score = scoreStateBid(opp);
+            rows.push(opp);
+          } catch(e) {
+            errors.push('Row ' + i + ': ' + e.message);
+          }
+        }
+        return { rows, errors };
+      }
+
+      function parseCsvLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+            else inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            result.push(current.trim()); current = '';
+          } else { current += ch; }
+        }
+        result.push(current.trim());
+        return result;
+      }
+
+      function parseMDY(str) {
+        if (!str) return '';
+        const m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (!m) return '';
+        return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0');
+      }
+
+      function guessAgencyType(agencyNum, title) {
+        const t = (title || '').toLowerCase();
+        const n = (agencyNum || '').trim();
+        if (t.includes('university') || t.includes('college') || t.includes(' u ')) return 'University';
+        if (t.includes('isd') || t.includes('school district') || t.includes('independent school')) return 'School';
+        if (t.includes('hospital') || t.includes('health') || t.includes('medical center')) return 'Hospital';
+        if (t.includes('city of') || t.includes('municipality')) return 'City';
+        if (t.includes('county')) return 'County';
+        if (['720','721','733','754','736','608'].includes(n)) return 'University';
+        return 'State';
+      }
+
+      // -- SCORING: STATE/LOCAL BIDS
+      function scoreStateBid(opp) {
+        let score = 0;
+        const text = ((opp.title||'') + ' ' + (opp.description||'')).toLowerCase();
+
+        // CLASS code match (0-60 pts)
+        if (opp.classCodes && opp.classCodes.length > 0) {
+          const p1Codes = TEXAS_CLASS_CODES.filter(c=>c.priority===1).map(c=>c.code);
+          const p2Codes = TEXAS_CLASS_CODES.filter(c=>c.priority===2).map(c=>c.code);
+          const matched = opp.classCodes.some(c=>p1Codes.includes(c));
+          const matchedP2 = opp.classCodes.some(c=>p2Codes.includes(c));
+          if (matched) score += 60;
+          else if (matchedP2) score += 30;
+        }
+
+        // HUB requirement (0-40 pts) -- HIGHEST WEIGHT -- legal mandate
+        if (opp.hubRequired) score += 40;
+
+        // HUB dollar target (0-30 pts)
+        const hubDollar = opp.hubDollarTarget || 0;
+        if (hubDollar >= 100000) score += 30;
+        else if (hubDollar >= 50000) score += 20;
+        else if (hubDollar >= 25000) score += 10;
+
+        // Geographic proximity to Temple TX (0-25 pts)
+        const region = (opp.region || '').toLowerCase();
+        if (region === 'central') score += 25;
+        else if (region === 'dfw' || region === 'sa') score += 15;
+        else if (region === 'houston') score += 8;
+        else score += 5; // statewide still counts
+
+        // Contract value sweet spot $50K-$500K (0-25 pts)
+        const val = parseValue(opp.estimatedValue);
+        if (val >= 50000 && val <= 500000) score += 25;
+        else if (val > 500000 && val <= 2000000) score += 15;
+        else if (val > 0 && val < 50000) score += 8;
+
+        // Urgency (0-20 pts)
+        if (opp.dueDate) {
+          const days = Math.ceil((new Date(opp.dueDate) - new Date()) / 86400000);
+          if (days >= 0 && days <= 7) score += 20;
+          else if (days > 7 && days <= 14) score += 10;
+        }
+
+        // Agency type (0-15 pts)
+        if (opp.agencyType === 'University') score += 15;
+        else if (opp.agencyType === 'Hospital') score += 15;
+        else if (opp.agencyType === 'School') score += 10;
+        else if (opp.agencyType === 'State') score += 8;
+
+        // Keyword match (0-25 pts)
+        score += KEYWORDS.filter(kw => text.includes(kw)).length * 5;
+
+        return score;
+      }
+
+      // -- HELPERS
+      function fmtDate(d) {
+        return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+'/'+d.getFullYear();
+      }
+      function parseValue(str) { return parseFloat((str||'').replace(/[^0-9.]/g,''))||0; }
+      function daysUntil(deadline) { if (!deadline) return null; return Math.ceil((new Date(deadline)-new Date())/86400000); }
+      function fmtDeadline(deadline) {
+        if (!deadline) return 'Not specified';
+        const d = daysUntil(deadline);
+        if (d<0) return 'Expired'; if(d===0) return 'Due today'; if(d===1) return 'Due tomorrow';
+        return d+' days';
+      }
+      function isUrgent(deadline) { const d=daysUntil(deadline); return d!==null&&d>=0&&d<=7; }
+
+      function mapItem(item, pull) {
+        return {
+          noticeId: item.noticeId,
+          title: item.title||'Untitled',
+          solicitationNumber: item.solicitationNumber||'',
+          department: item.fullParentPathName||item.departmentName||'N/A',
+          postedDate: item.postedDate||'',
+          responseDeadline: item.responseDeadLine||null,
+          type: item.type||'',
+          setAside: item.typeOfSetAsideDescription||null,
+          naicsCode: item.naicsCode||'',
+          pscCode: item.classificationCode||'',
+          description: item.description||'',
+          state: (item.placeOfPerformance&&item.placeOfPerformance.state&&item.placeOfPerformance.state.code)||pull.state||'',
+          placeOfPerformance: item.placeOfPerformance&&item.placeOfPerformance.city&&item.placeOfPerformance.city.name
+            ? item.placeOfPerformance.city.name+', '+((item.placeOfPerformance.state&&item.placeOfPerformance.state.code)||'')
+            : pull.state||'National',
+          estimatedValue: item.award&&item.award.amount ? '$'+Number(item.award.amount).toLocaleString() : 'Not disclosed',
+          contactEmail: (item.pointOfContact&&item.pointOfContact[0]&&item.pointOfContact[0].email)||'',
+          uiLink: 'https://sam.gov/opp/'+item.noticeId+'/view',
+          reviewed: false,
+          scanRun: pull.name,
+        };
+      }
+
+      function mapAward(item, pull) {
+        return {
+          awardId: item.noticeId||'award_'+Math.random(),
+          title: item.title||'Untitled',
+          primeName: (item.award&&item.award.awardee&&item.award.awardee.name)||'Unknown Prime',
+          primeUEI: (item.award&&item.award.awardee&&item.award.awardee.ueiSAM)||'',
+          department: item.fullParentPathName||item.departmentName||'N/A',
+          naicsCode: item.naicsCode||'',
+          pscCode: item.classificationCode||'',
+          description: item.description||'',
+          awardDate: (item.award&&item.award.date)||item.postedDate||'',
+          awardAmount: item.award&&item.award.amount ? '$'+Number(item.award.amount).toLocaleString() : 'Not disclosed',
+          contractNumber: (item.award&&item.award.number)||item.solicitationNumber||'',
+          state: (item.placeOfPerformance&&item.placeOfPerformance.state&&item.placeOfPerformance.state.code)||pull.state||'',
+          placeOfPerformance: item.placeOfPerformance&&item.placeOfPerformance.city&&item.placeOfPerformance.city.name
+            ? item.placeOfPerformance.city.name+', '+((item.placeOfPerformance.state&&item.placeOfPerformance.state.code)||'')
+            : pull.state||'National',
+          businessSize: pull.businessType==='large'?'Large':'Small/Unknown',
+          uiLink: 'https://sam.gov/opp/'+item.noticeId+'/view',
+          scanRun: pull.name,
+          score: 0,
+        };
+      }
+
+      // -- CAP STATEMENT
+      function generateCapStatement() {
+        const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+        return `IMPERIO TALENT SOLUTIONS
+A Division of The House of Kel LLC
+CAPABILITY STATEMENT
+----------------------------------------------------------------
+
+Prepared: ${today}
+
+COMPANY OVERVIEW
+----------------------------------------------------------------
+Legal Name:    The House of Kel LLC
+DBA:           Imperio Talent Solutions
+Founder/CEO:   Anthony K. Kelley Sr.
+Email:         anthony@imperiovita.co
+Phone:         (254) 226-5216
+Website:       www.imperiovita.co
+UEI:           YCTTJHXH69A6
+CAGE:          152U4
+Service Area:  Nationwide
+
+CERTIFICATIONS & STATUS
+----------------------------------------------------------------
+  [*] SBA-Certified SDVOSB
+  [*] Texas VetHUB Certified
+  [*] CMBL Registered (TX Comptroller)
+  [*] TVC - Texas Veteran Commission
+  [*] SAM.gov Active Registration
+  [*] Active Secret Clearance (through 2030)
+  [*] CompTIA Security+, AWS CCP, ServiceNow
+
+NAICS CODES
+----------------------------------------------------------------
+  Priority 1 - Procurement:
+    424120  Office Supplies Merchant Wholesalers
+    423850  Service Establishment Equipment
+    423490  Other Professional Equipment & Supplies
+    423450  Medical/Dental/Hospital Equipment & Supplies
+    423720  Plumbing & Heating Equipment & Supplies (HVAC)
+    424990  Other Miscellaneous Nondurable Goods
+
+  Priority 2 - Logistics:
+    492110  Couriers and Express Delivery Services
+
+  Priority 3 - Staffing & Services:
+    561311  Employment Placement Agencies
+    561320  Temporary Help Services (Staffing)
+    561110  Office Administrative Services
+    541519  Other Computer Related Services (IT/Cyber)
+    621111  Offices of Physicians (Medical Staffing)
+
+PSC CODES
+----------------------------------------------------------------
+  Priority 1 - Office Supplies:
+    7510  Office Supplies
+    7520  Office Devices & Accessories
+    7530  Stationery & Related Items
+
+  Priority 1 - Medical Consumables (no license required):
+    6510  Drugs & Biologicals - Consumables
+    6532  Hospital & Surgical Clothing / PPE
+    6540  Medical & Surgical Supplies - Consumables
+    6545  Medical Sets, Kits & Outfits
+
+  Priority 1 - Janitorial & Sanitation:
+    7930  Cleaning & Polishing Compounds
+    8125  Toiletries & Personal Care Items
+
+  Priority 2 - Clothing & Furniture:
+    8415  Clothing - Special Purpose
+    8410  Clothing - General
+    6530  Hospital Furniture (verify OEM req)
+
+  Priority 3 - Services:
+    R497  Support - Professional Administrative
+    R408  Support - Program Management
+    V121  Transportation - Motor Pool Operations
+
+CORE SUPPLY CAPABILITIES
+----------------------------------------------------------------
+  > General product procurement, sourcing, and delivery
+  > IT equipment: laptops, monitors, peripherals, networking
+  > Administrative and office supplies, consumables
+  > Medical supplies, PPE, gloves, gowns, safety equipment
+  > HVAC parts, equipment, maintenance supplies
+  > Facilities and maintenance supplies, janitorial
+  > Rapid fulfillment for recurring, high-frequency buys
+  > Drop-ship coordination direct to government facilities
+
+STAFFING CAPABILITIES
+----------------------------------------------------------------
+  > Cleared professional placement (Secret/TS/SCI)
+  > IT & cybersecurity talent sourcing
+  > HVAC technician and trades staffing
+  > Healthcare and medical professional placement
+  > Veteran transition employment support
+
+KEY DIFFERENTIATORS
+----------------------------------------------------------------
+  > SDVOSB + Texas VetHUB -- dual-certified preference
+  > 21-year senior logistics leader, $1.5B+ equipment managed
+  > Active Secret clearance - classified environment ready
+  > Dual capability: staffing AND supply under one vehicle
+
+----------------------------------------------------------------
+Anthony K. Kelley Sr.  |  Founder & CEO  |  Imperio Talent Solutions
+(254) 226-5216  |  anthony@imperiovita.co  |  www.imperiovita.co
+SDVOSB  -  VetHUB  -  CMBL  -  TVC
+A Division of The House of Kel LLC
+----------------------------------------------------------------`;
+      }
+
+      // -- BUSINESS DAY CALCULATOR
+      function getFederalHolidays(year) {
+        const h = [];
+        const fixed = [[1,1],[6,19],[7,4],[11,11],[12,25]];
+        fixed.forEach(([m,d]) => {
+          const dt = new Date(year, m-1, d);
+          const day = dt.getDay();
+          if (day === 0) h.push(new Date(year, m-1, d+1));
+          else if (day === 6) h.push(new Date(year, m-1, d-1));
+          else h.push(dt);
+        });
+        const ny = new Date(year, 0, 1);
+        if (ny.getDay() === 6) h.push(new Date(year-1, 11, 31));
+        h.push(nthWeekday(year, 0, 1, 3));
+        h.push(nthWeekday(year, 1, 1, 3));
+        h.push(lastWeekday(year, 4, 1));
+        h.push(nthWeekday(year, 8, 1, 1));
+        h.push(nthWeekday(year, 9, 1, 2));
+        h.push(nthWeekday(year, 10, 4, 4));
+        return new Set(h.map(d => d.toDateString()));
+      }
+      function nthWeekday(year, month, weekday, n) {
+        let count = 0, d = new Date(year, month, 1);
+        while (true) { if (d.getDay() === weekday) { count++; if (count === n) return new Date(d); } d.setDate(d.getDate()+1); }
+      }
+      function lastWeekday(year, month, weekday) {
+        let d = new Date(year, month+1, 0);
+        while (d.getDay() !== weekday) d.setDate(d.getDate()-1);
+        return new Date(d);
+      }
+      function addBusinessDays(startDate, days) {
+        const holidays = new Set([...getFederalHolidays(startDate.getFullYear()),...getFederalHolidays(startDate.getFullYear()+1)]);
+        let d = new Date(startDate);
+        let added = 0;
+        while (added < days) {
+          d.setDate(d.getDate()+1);
+          const dow = d.getDay();
+          if (dow === 0 || dow === 6) continue;
+          if (holidays.has(d.toDateString())) continue;
+          added++;
+        }
+        return d;
+      }
+      function toDateInputValue(date) {
+        return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+      }
+      const OUTREACH_FOLLOWUP_DAYS = {
+        'Email': 3, 'Cold Call': 1, 'LinkedIn': 4, 'In-Person': 2,
+        'Referral': 2, 'Capability Statement Sent': 5, 'Proposal Submitted': 7,
+      };
+
+      // -- SMALL COMPONENTS
+      function ScoreBadge({ score, blue, purple }) {
+        if (!score) return null;
+        let color, border, bg;
+        if (purple) {
+          color = score>=100?'#d8b4fe':score>=70?'#eab308':'#a1a1aa';
+          border= score>=100?'#a855f7':score>=70?'#eab308':'#3f3f46';
+          bg    = score>=100?'rgba(168,85,247,0.2)':score>=70?'rgba(234,179,8,0.2)':'rgba(107,114,128,0.2)';
+        } else if (blue) {
+          color = score>=100?'#93c5fd':score>=70?'#eab308':'#a1a1aa';
+          border= score>=100?'#3b82f6':score>=70?'#eab308':'#3f3f46';
+          bg    = score>=100?'rgba(59,130,246,0.2)':score>=70?'rgba(234,179,8,0.2)':'rgba(107,114,128,0.2)';
+        } else {
+          color = score>=100?'#22c55e':score>=70?'#eab308':'#a1a1aa';
+          border= score>=100?'#22c55e':score>=70?'#eab308':'#3f3f46';
+          bg    = score>=100?'rgba(34,197,94,0.2)':score>=70?'rgba(234,179,8,0.2)':'rgba(107,114,128,0.2)';
+        }
+        return <span style={{padding:'0.2rem 0.5rem',borderRadius:'0.25rem',fontSize:'0.7rem',fontWeight:'700',backgroundColor:bg,color,border:'1px solid '+border}}>&#9889; {score}pts</span>;
+      }
+
+      function ProgressBar({ progress, label, color }) {
+        if (!progress||!progress.total) return null;
+        const pct = Math.round((progress.current/progress.total)*100);
+        return (
+          <div style={{marginBottom:'0.875rem'}}>
+            <p style={{fontSize:'0.7rem',color:'var(--text-secondary)',marginBottom:'0.2rem'}}>{label}</p>
+            <div className="progress-bar-wrap" style={{border:'1px solid '+color}}>
+              <div className="progress-bar-fill" style={{width:pct+'%',backgroundColor:color,color:pct>30?'#000':'#fff'}}>{progress.current} / {progress.total}</div>
+            </div>
+            <p style={{fontSize:'0.8rem',color:'var(--text-secondary)'}}>{progress.status}</p>
+          </div>
+        );
+      }
+
+      // -- LEAD MODAL (pipeline)
+      function LeadModal({ lead, onClose, onSave, isNew }) {
+        const [form, setForm] = useState(lead || {
+          id: Date.now()+'',
+          primeName:'',contractNumber:'',department:'',awardAmount:'',
+          awardDate:'',state:'',uiLink:'',stage:'identified',
+          contactName:'',contactEmail:'',contactPhone:'',
+          outreachMethod:'',outreachDate:'',
+          nextAction:'',followUpDate:'',notes:'',log:[],
+          addedDate: new Date().toISOString(),
+        });
+        const [logEntry, setLogEntry] = useState('');
+        const [followUpWasAutoSet, setFollowUpWasAutoSet] = useState(false);
+        const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+        function handleOutreachMethodChange(method) {
+          const today = new Date();
+          const newForm = { ...form, outreachMethod: method };
+          if (!form.outreachDate) newForm.outreachDate = toDateInputValue(today);
+          if (method && OUTREACH_FOLLOWUP_DAYS[method]) {
+            const days = OUTREACH_FOLLOWUP_DAYS[method];
+            const followUp = addBusinessDays(today, days);
+            newForm.followUpDate = toDateInputValue(followUp);
+            setFollowUpWasAutoSet(true);
+            if (form.stage === 'identified' || form.stage === 'researching') newForm.stage = 'outreach';
+            const logText = method + ' sent -- follow-up auto-set to ' + followUp.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' (' + days + ' business day' + (days>1?'s':'') + ')';
+            newForm.log = [...(form.log||[]), { date: new Date().toLocaleString(), text: logText, auto: true }];
+          } else { setFollowUpWasAutoSet(false); }
+          setForm(newForm);
+        }
+
+        function handleOutreachDateChange(dateStr) {
+          set('outreachDate', dateStr);
+          if (form.outreachMethod && OUTREACH_FOLLOWUP_DAYS[form.outreachMethod] && dateStr) {
+            const from = new Date(dateStr + 'T12:00:00');
+            const days = OUTREACH_FOLLOWUP_DAYS[form.outreachMethod];
+            const followUp = addBusinessDays(from, days);
+            setForm(f => ({...f, outreachDate: dateStr, followUpDate: toDateInputValue(followUp)}));
+            setFollowUpWasAutoSet(true);
+          }
+        }
+
+        function addLog() {
+          if (!logEntry.trim()) return;
+          const entry = { date: new Date().toLocaleString(), text: logEntry.trim() };
+          setForm(f=>({...f,log:[...(f.log||[]),entry]}));
+          setLogEntry('');
+        }
+
+        const followUpDaysLabel = (() => {
+          if (!form.followUpDate) return null;
+          const d = Math.ceil((new Date(form.followUpDate) - new Date()) / 86400000);
+          if (d < 0) return { text: 'Overdue by '+Math.abs(d)+'d', color: 'var(--danger)' };
+          if (d === 0) return { text: 'Due today', color: 'var(--danger)' };
+          if (d === 1) return { text: 'Tomorrow', color: 'var(--warning)' };
+          return { text: 'In '+d+' days', color: d<=3?'var(--warning)':'var(--success)' };
+        })();
+
+        return (
+          <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+            <div className="modal">
+              <div className="modal-header">
+                <span className="modal-title">{isNew?'Add Lead to Pipeline':'Edit Lead'}</span>
+                <button className="modal-close" onClick={onClose}>x</button>
+              </div>
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group full">
+                    <label className="form-label">Prime / Agency Name *</label>
+                    <input className="form-input" value={form.primeName} onChange={e=>set('primeName',e.target.value)} placeholder="e.g., Booz Allen Hamilton / UT Austin" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Contract / Bid Number</label>
+                    <input className="form-input" value={form.contractNumber} onChange={e=>set('contractNumber',e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Department / Agency</label>
+                    <input className="form-input" value={form.department} onChange={e=>set('department',e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Contract Value</label>
+                    <input className="form-input" value={form.awardAmount} onChange={e=>set('awardAmount',e.target.value)} placeholder="e.g., $2,500,000" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Award / Posted Date</label>
+                    <input className="form-input" type="date" value={form.awardDate} onChange={e=>set('awardDate',e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">State</label>
+                    <input className="form-input" value={form.state} onChange={e=>set('state',e.target.value)} placeholder="TX" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Pipeline Stage</label>
+                    <select className="form-select" value={form.stage} onChange={e=>set('stage',e.target.value)}>
+                      {PIPELINE_STAGES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group full" style={{borderTop:'1px solid var(--border-color)',paddingTop:'0.75rem',marginTop:'0.25rem'}}>
+                    <label className="form-label" style={{color:'var(--imperial-gold)'}}>Log Outreach -- Auto-Sets Follow-Up</label>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Outreach Method <span style={{color:'var(--text-secondary)',fontWeight:'400',textTransform:'none',fontSize:'0.68rem'}}>(triggers follow-up countdown)</span></label>
+                    <select className="form-select" value={form.outreachMethod} onChange={e=>handleOutreachMethodChange(e.target.value)} style={form.outreachMethod?{borderColor:'var(--imperial-gold)'}:{}}>
+                      <option value="">-- Select to trigger --</option>
+                      <option value="Email">Email (3 bd)</option>
+                      <option value="Cold Call">Cold Call (1 bd)</option>
+                      <option value="LinkedIn">LinkedIn (4 bd)</option>
+                      <option value="In-Person">In-Person (2 bd)</option>
+                      <option value="Referral">Referral (2 bd)</option>
+                      <option value="Capability Statement Sent">Capability Statement Sent (5 bd)</option>
+                      <option value="Proposal Submitted">Proposal Submitted (7 bd)</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Outreach Date</label>
+                    <input className="form-input" type="date" value={form.outreachDate} onChange={e=>handleOutreachDateChange(e.target.value)} />
+                  </div>
+                  <div className="form-group" style={{gridColumn:'1/-1'}}>
+                    <label className="form-label">
+                      Follow-Up Date
+                      {followUpWasAutoSet&&<span style={{color:'var(--success)',marginLeft:'0.4rem',fontSize:'0.68rem',textTransform:'none',fontWeight:'400'}}>-- auto-calculated</span>}
+                    </label>
+                    <div style={{display:'flex',gap:'0.5rem',alignItems:'center'}}>
+                      <input className="form-input" type="date" value={form.followUpDate} onChange={e=>{set('followUpDate',e.target.value);setFollowUpWasAutoSet(false);}} style={form.followUpDate?{borderColor:followUpDaysLabel&&followUpDaysLabel.color}:{}} />
+                      {followUpDaysLabel&&<span style={{fontSize:'0.75rem',fontWeight:'700',color:followUpDaysLabel.color,whiteSpace:'nowrap',padding:'0.3rem 0.625rem',background:'rgba(0,0,0,0.3)',borderRadius:'0.25rem',border:'1px solid '+followUpDaysLabel.color}}>{followUpDaysLabel.text}</span>}
+                    </div>
+                  </div>
+                  <div className="form-group full" style={{borderTop:'1px solid var(--border-color)',paddingTop:'0.75rem',marginTop:'0.25rem'}}>
+                    <label className="form-label" style={{color:'var(--imperial-gold)'}}>Contact Information</label>
+                  </div>
+                  <div className="form-group"><label className="form-label">Contact Name</label><input className="form-input" value={form.contactName} onChange={e=>set('contactName',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Contact Email</label><input className="form-input" type="email" value={form.contactEmail} onChange={e=>set('contactEmail',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Contact Phone</label><input className="form-input" value={form.contactPhone} onChange={e=>set('contactPhone',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Next Action</label><input className="form-input" value={form.nextAction} onChange={e=>set('nextAction',e.target.value)} placeholder="e.g., Send capabilities statement" /></div>
+                  <div className="form-group full"><label className="form-label">SAM.gov / Bid Link</label><input className="form-input" value={form.uiLink} onChange={e=>set('uiLink',e.target.value)} /></div>
+                  <div className="form-group full"><label className="form-label">Notes</label><textarea className="form-textarea" value={form.notes} onChange={e=>set('notes',e.target.value)} /></div>
+                  <div className="form-group full">
+                    <label className="form-label">Contact Log</label>
+                    <div style={{display:'flex',gap:'0.5rem'}}>
+                      <input className="form-input" style={{flex:1}} value={logEntry} onChange={e=>setLogEntry(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addLog()} placeholder="Log a call, email, meeting note..." />
+                      <button className="btn btn-secondary" onClick={addLog} style={{whiteSpace:'nowrap'}}>+ Add</button>
+                    </div>
+                    {form.log&&form.log.length>0&&(
+                      <div className="contact-log">
+                        {[...form.log].reverse().map((entry,i)=>(
+                          <div key={i} className="contact-log-entry" style={entry.auto?{borderLeftColor:'var(--imperial-gold)',opacity:0.85}:{}}>
+                            <div className="log-date">{entry.date}{entry.auto&&<span style={{color:'var(--imperial-gold)',marginLeft:'0.5rem',fontSize:'0.65rem'}}>AUTO</span>}</div>
+                            {entry.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                <button className="btn btn-primary" onClick={()=>onSave(form)}>Save Lead</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // -- KANBAN BOARD
+      function KanbanBoard({ leads, onEditLead, onAddLead }) {
+        const stageWeightMap = Object.fromEntries(PIPELINE_STAGES.map(s=>[s.id,s.weight]));
+        const weightedPipelineValue = leads.reduce((sum,l)=>{
+          const val = parseValue(l.awardAmount);
+          const weight = stageWeightMap[l.stage]||0;
+          return sum + val*weight*0.15;
+        },0);
+
+        function daysSinceActivity(lead) {
+          const lastLog = lead.log&&lead.log.length>0 ? new Date(lead.log[lead.log.length-1].date) : new Date(lead.addedDate||0);
+          return Math.floor((new Date()-lastLog)/86400000);
+        }
+
+        return (
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem',flexWrap:'wrap',gap:'0.5rem'}}>
+              <div>
+                <span style={{fontSize:'0.8rem',color:'var(--text-secondary)'}}>Weighted Pipeline (est. 15% sub rate): </span>
+                <span style={{color:'var(--imperial-gold)',fontWeight:'700',fontSize:'1rem'}}>${weightedPipelineValue.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+              </div>
+              <div style={{display:'flex',gap:'0.5rem'}}>
+                <button className="btn btn-primary" onClick={()=>onAddLead()}>+ Add Lead</button>
+                <button className="btn btn-secondary" onClick={()=>{
+                  if(typeof XLSX==='undefined'){alert('Load in browser for export');return;}
+                  const rows=leads.map(l=>({'Prime':l.primeName,'Contract':l.contractNumber,'Dept':l.department,'Value':l.awardAmount,'Stage':l.stage,'Contact':l.contactName,'Email':l.contactEmail,'Phone':l.contactPhone,'Next Action':l.nextAction,'Follow-Up':l.followUpDate,'Notes':l.notes,'State':l.state}));
+                  const ws=XLSX.utils.json_to_sheet(rows);
+                  const wb=XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb,ws,'Pipeline');
+                  XLSX.writeFile(wb,'Imperio_Pipeline_'+new Date().toISOString().split('T')[0]+'.xlsx');
+                }}>Export Excel</button>
+              </div>
+            </div>
+            <div className="kanban-board">
+              {PIPELINE_STAGES.map(stage=>{
+                const stageleads = leads.filter(l=>l.stage===stage.id);
+                return (
+                  <div key={stage.id} className={'kanban-col stage-'+stage.id}>
+                    <div className="kanban-col-header">
+                      <span className="kanban-col-title">{stage.label}</span>
+                      <span className="kanban-col-count">{stageleads.length}</span>
+                    </div>
+                    <div className="kanban-cards">
+                      {stageleads.length===0&&<div style={{fontSize:'0.7rem',color:'var(--text-secondary)',textAlign:'center',padding:'1rem'}}>No leads</div>}
+                      {stageleads.map(lead=>{
+                        const days = daysSinceActivity(lead);
+                        const stale = days>=14 && lead.stage!=='closed';
+                        return (
+                          <div key={lead.id} className={'kanban-card'+(stale?' stale':'')} onClick={()=>onEditLead(lead)}>
+                            <div className="kanban-card-prime">{lead.primeName}</div>
+                            <div className="kanban-card-contract">{lead.contractNumber||lead.department||'No contract #'}</div>
+                            <div className="kanban-card-meta">
+                              <span className="kanban-card-value">{lead.awardAmount&&lead.awardAmount!=='Not disclosed'?lead.awardAmount:''}</span>
+                              <span className={'kanban-card-days'+(stale?' stale':'')}>{stale?'Stale '+days+'d':days===0?'Today':days+'d ago'}</span>
+                            </div>
+                            {lead.followUpDate&&(()=>{
+                              const d=Math.ceil((new Date(lead.followUpDate)-new Date())/86400000);
+                              if(d>=0&&d<=3) return <div style={{fontSize:'0.65rem',color:'var(--danger)',marginTop:'0.25rem'}}>Follow-up in {d}d</div>;
+                              if(d<0) return <div style={{fontSize:'0.65rem',color:'var(--danger)',marginTop:'0.25rem'}}>Follow-up overdue</div>;
+                              return null;
+                            })()}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      // ============================================================
+      // -- CSV IMPORT DROP ZONE COMPONENT
+      function CsvDropZone({ onImport, importType, label }) {
+        const [dragOver, setDragOver] = useState(false);
+        const [result, setResult] = useState(null);
+        const inputRef = useRef(null);
+
+        function processFile(file) {
+          if (!file || !file.name.endsWith('.csv')) {
+            setResult({ type: 'error', msg: 'Please upload a .csv file' });
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target.result;
+            const { rows, errors } = parseESBDCsv(text, importType);
+            if (rows.length === 0) {
+              setResult({ type: 'error', msg: 'No valid rows found. ' + (errors[0] || '') });
+              return;
+            }
+            onImport(rows, importType);
+            const msg = rows.length + ' bids imported' + (errors.length ? ' (' + errors.length + ' rows skipped)' : '') + '. Scores calculated automatically.';
+            setResult({ type: 'success', msg });
+            setTimeout(() => setResult(null), 8000);
+          };
+          reader.readAsText(file);
+        }
+
+        function onDrop(e) {
+          e.preventDefault(); setDragOver(false);
+          processFile(e.dataTransfer.files[0]);
+        }
+
+        return (
+          <div style={{marginBottom:'0.75rem'}}>
+            {result && <div className={'csv-import-result ' + result.type}>{result.msg}</div>}
+            <div
+              className={'csv-drop-zone' + (dragOver ? ' drag-over' : '')}
+              onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+              onDragLeave={()=>setDragOver(false)}
+              onDrop={onDrop}
+              onClick={()=>inputRef.current&&inputRef.current.click()}
+            >
+              <div className="csv-drop-zone-icon">📂</div>
+              <div className="csv-drop-zone-text">{label}</div>
+              <div className="csv-drop-zone-sub">Drag & drop your ESBD CSV export here, or click to browse</div>
+              <div className="csv-drop-zone-sub" style={{marginTop:'0.25rem',color:'rgba(16,185,129,0.5)'}}>
+                Auto-detects: Name · Solicitation ID · Due Date · Agency # · Status · Posting Date · NIGP Codes
+              </div>
+            </div>
+            <input ref={inputRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{processFile(e.target.files[0]);e.target.value='';}} />
+          </div>
+        );
+      }
+
+      // -- STATE/LOCAL BID ENTRY MODAL (manual ESBD entry)
+      // ============================================================
+      function StateBidModal({ onClose, onSave }) {
+        const blankForm = {
+          noticeId: 'ESBD-' + Date.now(),
+          source: 'ESBD',
+          sourceDetail: '',
+          title: '',
+          agency: '',
+          agencyType: 'State',
+          bidNumber: '',
+          postedDate: '',
+          dueDate: '',
+          estimatedValue: '',
+          classCodes: [],
+          classCodeInput: '',
+          hubRequired: false,
+          hubGoal: '',
+          location: '',
+          county: '',
+          region: 'central',
+          description: '',
+          contactName: '',
+          contactEmail: '',
+          contactPhone: '',
+          solicitationUrl: '',
+          reviewed: false,
+          flagged: false,
+          addedDate: new Date().toISOString(),
+        };
+        const [form, setForm] = useState(blankForm);
+        const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+        // Auto-calculate HUB dollar target
+        const hubDollarTarget = (() => {
+          const val = parseValue(form.estimatedValue);
+          const goalPct = parseFloat((form.hubGoal||'').replace('%',''))/100;
+          if (val && goalPct) return Math.round(val * goalPct);
+          return 0;
+        })();
+
+        function addClassCode() {
+          const c = form.classCodeInput.trim();
+          if (c && !form.classCodes.includes(c)) {
+            setForm(f=>({...f, classCodes:[...f.classCodes, c], classCodeInput:''}));
+          }
+        }
+
+        function handleSave() {
+          if (!form.title.trim()) { alert('Title is required'); return; }
+          const opp = {
+            ...form,
+            hubDollarTarget,
+            score: scoreStateBid({...form, hubDollarTarget}),
+          };
+          onSave(opp);
+        }
+
+        return (
+          <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+            <div className="modal" style={{borderColor:'var(--tx-green)',maxWidth:'720px'}}>
+              <div className="modal-header" style={{borderColor:'rgba(16,185,129,0.3)'}}>
+                <span className="modal-title" style={{color:'var(--tx-green)'}}>Add State/Local Bid -- ESBD / Texas</span>
+                <button className="modal-close" onClick={onClose}>x</button>
+              </div>
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group full">
+                    <label className="form-label">Bid Title *</label>
+                    <input className="form-input" value={form.title} onChange={e=>set('title',e.target.value)} placeholder="e.g., Office Supplies & Breakroom Products" style={{borderColor:'rgba(16,185,129,0.4)'}} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Source</label>
+                    <select className="form-select" value={form.source} onChange={e=>set('source',e.target.value)}>
+                      <option value="ESBD">ESBD (TX Comptroller)</option>
+                      <option value="ESC">Regional ESC</option>
+                      <option value="ISD">School District (ISD)</option>
+                      <option value="TxSmartBuy">TxSmartBuy</option>
+                      <option value="City">City</option>
+                      <option value="County">County</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Agency / Entity Name</label>
+                    <input className="form-input" value={form.agency} onChange={e=>set('agency',e.target.value)} placeholder="e.g., UT Austin, Region 12 ESC" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Agency Type</label>
+                    <select className="form-select" value={form.agencyType} onChange={e=>set('agencyType',e.target.value)}>
+                      <option value="State">State Agency</option>
+                      <option value="University">University / College</option>
+                      <option value="School">School District (ISD)</option>
+                      <option value="Hospital">Hospital / Health System</option>
+                      <option value="City">City</option>
+                      <option value="County">County</option>
+                      <option value="ESC">Education Service Center</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Bid Number</label>
+                    <input className="form-input" value={form.bidNumber} onChange={e=>set('bidNumber',e.target.value)} placeholder="e.g., 750-24-0089" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Posted Date</label>
+                    <input className="form-input" type="date" value={form.postedDate} onChange={e=>set('postedDate',e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Due Date</label>
+                    <input className="form-input" type="date" value={form.dueDate} onChange={e=>set('dueDate',e.target.value)} style={isUrgent(form.dueDate)?{borderColor:'var(--danger)'}:{}} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Estimated Value</label>
+                    <input className="form-input" value={form.estimatedValue} onChange={e=>set('estimatedValue',e.target.value)} placeholder="e.g., $250,000" />
+                  </div>
+
+                  {/* HUB Section */}
+                  <div className="form-group full" style={{borderTop:'1px solid rgba(168,85,247,0.3)',paddingTop:'0.75rem',marginTop:'0.25rem'}}>
+                    <label className="form-label" style={{color:'var(--hub-light)'}}>HUB Requirements (Texas Law -- Legal Leverage)</label>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">HUB Required?</label>
+                    <select className="form-select" value={form.hubRequired?'yes':'no'} onChange={e=>set('hubRequired',e.target.value==='yes')} style={form.hubRequired?{borderColor:'var(--hub-color)'}:{}}>
+                      <option value="no">No / Unknown</option>
+                      <option value="yes">Yes -- HUB Subcontracting Required</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">HUB Goal % <span style={{color:'var(--text-secondary)',textTransform:'none',fontWeight:400,fontSize:'0.68rem'}}>(if known)</span></label>
+                    <input className="form-input" value={form.hubGoal} onChange={e=>set('hubGoal',e.target.value)} placeholder="e.g., 24.1%" style={form.hubRequired?{borderColor:'var(--hub-color)'}:{}} />
+                  </div>
+                  {hubDollarTarget > 0 && (
+                    <div className="form-group full">
+                      <div style={{background:'rgba(168,85,247,0.1)',border:'1px solid rgba(168,85,247,0.4)',borderRadius:'0.375rem',padding:'0.5rem 0.75rem',fontSize:'0.8rem'}}>
+                        <span style={{color:'var(--hub-light)'}}>HUB Dollar Target: </span>
+                        <span style={{color:'var(--text-primary)',fontWeight:'700',fontSize:'1rem'}}>${hubDollarTarget.toLocaleString()}</span>
+                        <span style={{color:'var(--text-secondary)',marginLeft:'0.5rem',fontSize:'0.75rem'}}>-- Imperio's opportunity slice</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Location */}
+                  <div className="form-group full" style={{borderTop:'1px solid var(--border-color)',paddingTop:'0.75rem',marginTop:'0.25rem'}}>
+                    <label className="form-label" style={{color:'var(--tx-green)'}}>Location</label>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">City / Location</label>
+                    <input className="form-input" value={form.location} onChange={e=>set('location',e.target.value)} placeholder="e.g., Austin, TX" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">TX Region</label>
+                    <select className="form-select" value={form.region} onChange={e=>set('region',e.target.value)}>
+                      {TX_REGIONS.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+                    </select>
+                  </div>
+
+                  {/* CLASS Codes */}
+                  <div className="form-group full">
+                    <label className="form-label">Texas CLASS Codes</label>
+                    <div style={{display:'flex',gap:'0.5rem',marginBottom:'0.4rem'}}>
+                      <select className="form-select" style={{flex:1}} value={form.classCodeInput} onChange={e=>setForm(f=>({...f,classCodeInput:e.target.value}))}>
+                        <option value="">-- Select CLASS code --</option>
+                        {TEXAS_CLASS_CODES.map(c=><option key={c.code} value={c.code}>{c.code} - {c.description}</option>)}
+                      </select>
+                      <button className="btn btn-secondary" onClick={addClassCode} type="button">+ Add</button>
+                    </div>
+                    {form.classCodes.length > 0 && (
+                      <div style={{display:'flex',gap:'0.4rem',flexWrap:'wrap'}}>
+                        {form.classCodes.map(c=>(
+                          <span key={c} style={{padding:'0.2rem 0.5rem',background:'rgba(16,185,129,0.1)',border:'1px solid var(--tx-green)',borderRadius:'1rem',fontSize:'0.75rem',color:'var(--tx-green)',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                            CLASS {c}
+                            <button onClick={()=>setForm(f=>({...f,classCodes:f.classCodes.filter(x=>x!==c)}))} style={{background:'none',border:'none',color:'var(--tx-green)',cursor:'pointer',fontSize:'0.8rem',lineHeight:1}}>x</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact */}
+                  <div className="form-group full" style={{borderTop:'1px solid var(--border-color)',paddingTop:'0.75rem',marginTop:'0.25rem'}}>
+                    <label className="form-label" style={{color:'var(--imperial-gold)'}}>Contact & Links</label>
+                  </div>
+                  <div className="form-group"><label className="form-label">Contact Name</label><input className="form-input" value={form.contactName} onChange={e=>set('contactName',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Contact Email</label><input className="form-input" type="email" value={form.contactEmail} onChange={e=>set('contactEmail',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Contact Phone</label><input className="form-input" value={form.contactPhone} onChange={e=>set('contactPhone',e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Solicitation URL</label><input className="form-input" value={form.solicitationUrl} onChange={e=>set('solicitationUrl',e.target.value)} placeholder="https://esbd.cpa.texas.gov/..." /></div>
+                  <div className="form-group full">
+                    <label className="form-label">Description</label>
+                    <textarea className="form-textarea" value={form.description} onChange={e=>set('description',e.target.value)} rows={3} placeholder="Brief description of what's being procured..." />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSave} style={{borderColor:'var(--tx-green)',color:'var(--tx-green)'}}>Save Bid</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ============================================================
+      // -- MAIN APP
+      // ============================================================
+      function SAMScanner() {
+        const [opportunities, setOpportunities] = useState([]);
+        const [filteredOpps, setFilteredOpps] = useState([]);
+        const [awards, setAwards] = useState([]);
+        const [filteredAwards, setFilteredAwards] = useState([]);
+        const [stateSolicitations, setStateSolicitations] = useState([]);
+        const [filteredStateSolicitations, setFilteredStateSolicitations] = useState([]);
+        const [stateAwards, setStateAwards] = useState([]);
+        const [filteredStateAwards, setFilteredStateAwards] = useState([]);
+        const [leads, setLeads] = useState([]);
+        const [activeTab, setActiveTab] = useState('opportunities');
+        const [loading, setLoading] = useState(false);
+        const [awardsLoading, setAwardsLoading] = useState(false);
+        const [scanProgress, setScanProgress] = useState({current:0,total:0,status:''});
+        const [awardsProgress, setAwardsProgress] = useState({current:0,total:0,status:''});
+        const [lastScan, setLastScan] = useState(null);
+        const [lastAwardsScan, setLastAwardsScan] = useState(null);
+        const [stats, setStats] = useState({total:0,new:0,urgent:0,sdvosb:0});
+        const [awardsStats, setAwardsStats] = useState({total:0,largeBusiness:0,highValue:0,txBased:0});
+        const [stateSolStats, setStateSolStats] = useState({total:0,hubRequired:0,urgent:0,highScore:0});
+        const [stateAwardStats, setStateAwardStats] = useState({total:0,largePrime:0,highValue:0,recent:0});
+        const [filterNaics, setFilterNaics] = useState('all');
+        const [filterPsc, setFilterPsc] = useState('all');
+        const [filterSetAside, setFilterSetAside] = useState('all');
+        const [filterValue, setFilterValue] = useState('all');
+        const [filterStatus, setFilterStatus] = useState('all');
+        const [filterSource, setFilterSource] = useState('all');
+        const [filterClass, setFilterClass] = useState('all');
+        const [filterAgencyType, setFilterAgencyType] = useState('all');
+        const [filterHUB, setFilterHUB] = useState('all');
+        const [filterRegion, setFilterRegion] = useState('all');
+        const [searchTerm, setSearchTerm] = useState('');
+        const [editingLead, setEditingLead] = useState(null);
+        const [addingLead, setAddingLead] = useState(false);
+        const [capSeedAward, setCapSeedAward] = useState(null);
+        const [showCapStatement, setShowCapStatement] = useState(false);
+        const [showStateBidModal, setShowStateBidModal] = useState(false);
+        const [editingStateBid, setEditingStateBid] = useState(null);
+
+        useEffect(()=>{ loadAll(); },[]);
+        useEffect(()=>{ applyFilters(); },[opportunities,filterNaics,filterPsc,filterSetAside,filterValue,filterStatus,searchTerm]);
+        useEffect(()=>{ applyAwardsFilters(); },[awards,filterNaics,filterPsc,searchTerm]);
+        useEffect(()=>{ applyStateSolFilters(); },[stateSolicitations,filterSource,filterClass,filterAgencyType,filterHUB,filterRegion,searchTerm]);
+        useEffect(()=>{ applyStateAwardFilters(); },[stateAwards,filterSource,filterClass,filterAgencyType,filterRegion,searchTerm]);
+
+        function lsSet(k,v){localStorage.setItem(k,JSON.stringify(v));}
+        function lsGet(k){const v=localStorage.getItem(k);return v?JSON.parse(v):null;}
+        function lsDel(k){localStorage.removeItem(k);}
+        function lsList(p){return Object.keys(localStorage).filter(k=>k.startsWith(p));}
+
+        function loadAll() { loadOpportunities(); loadAwards(); loadLeads(); loadStateBids(); }
+
+        async function loadOpportunities() {
+          try {
+            const valid=lsList('sam_opp:').map(k=>lsGet(k)).filter(Boolean);
+            setOpportunities(valid); calcStats(valid);
+            const ls=lsGet('sam_last_scan'); if(ls) setLastScan(new Date(ls));
+          } catch(e){}
+        }
+        async function loadAwards() {
+          try {
+            const valid=lsList('sam_award:').map(k=>lsGet(k)).filter(Boolean);
+            setAwards(valid); calcAwardsStats(valid);
+            const ls=lsGet('sam_last_awards_scan'); if(ls) setLastAwardsScan(new Date(ls));
+          } catch(e){}
+        }
+        function loadStateBids() {
+          try {
+            const all = lsList('imp_state_bid:').map(k=>lsGet(k)).filter(Boolean);
+            const sols = all.filter(b => b.importType !== 'award');
+            const awds = all.filter(b => b.importType === 'award');
+            setStateSolicitations(sols);
+            setStateAwards(awds);
+            calcStateSolStats(sols);
+            calcStateAwardStats(awds);
+          } catch(e){}
+        }
+        function loadLeads() {
+          const saved=lsGet('imp_pipeline');
+          setLeads(Array.isArray(saved)?saved:[]);
+        }
+        function saveLeads(newLeads) { lsSet('imp_pipeline',newLeads); setLeads(newLeads); }
+
+        function calcStats(opps) {
+          const now=new Date();
+          setStats({
+            total:opps.length,
+            new:opps.filter(o=>!o.reviewed).length,
+            urgent:opps.filter(o=>{if(!o.responseDeadline)return false;const d=Math.ceil((new Date(o.responseDeadline)-now)/86400000);return d>=0&&d<=7;}).length,
+            sdvosb:opps.filter(o=>o.setAside&&o.setAside.includes('SDVOSB')).length,
+          });
+        }
+        function calcAwardsStats(awds) {
+          setAwardsStats({total:awds.length,largeBusiness:awds.filter(a=>a.businessSize==='Large').length,highValue:awds.filter(a=>parseValue(a.awardAmount)>=5000000).length,txBased:awds.filter(a=>a.state==='TX').length});
+        }
+        function calcStateSolStats(bids) {
+          const now = new Date();
+          setStateSolStats({
+            total: bids.length,
+            hubRequired: bids.filter(b=>b.hubRequired).length,
+            urgent: bids.filter(b=>{if(!b.dueDate)return false;const d=Math.ceil((new Date(b.dueDate)-now)/86400000);return d>=0&&d<=7;}).length,
+            highScore: bids.filter(b=>(b.score||0)>=100).length,
+          });
+        }
+        function calcStateAwardStats(awds) {
+          const now = new Date();
+          setStateAwardStats({
+            total: awds.length,
+            highValue: awds.filter(a=>parseValue(a.estimatedValue)>=50000).length,
+            recent: awds.filter(a=>{if(!a.postedDate)return false;const d=Math.floor((now-new Date(a.postedDate))/86400000);return d<=30;}).length,
+            withContact: awds.filter(a=>a.contactEmail||a.contactName).length,
+          });
+        }
+
+        function applyFilters() {
+          let f=[...opportunities];
+          if(filterNaics!=='all') f=f.filter(o=>o.naicsCode===filterNaics);
+          if(filterPsc!=='all') f=f.filter(o=>o.pscCode===filterPsc);
+          if(filterSetAside==='open') f=f.filter(o=>!o.setAside||o.setAside.trim()==='');
+          else if(filterSetAside!=='all') f=f.filter(o=>o.setAside&&o.setAside.includes(filterSetAside));
+          if(filterValue!=='all') f=f.filter(o=>{
+            const val=parseValue(o.estimatedValue);
+            if(filterValue==='under250k') return val>0&&val<250000;
+            if(filterValue==='250k-500k') return val>=250000&&val<500000;
+            if(filterValue==='500k-5m') return val>=500000&&val<5000000;
+            if(filterValue==='over5m') return val>=5000000;
+            return true;
+          });
+          if(filterStatus==='new') f=f.filter(o=>!o.reviewed);
+          if(filterStatus==='reviewed') f=f.filter(o=>o.reviewed);
+          if(searchTerm){const t=searchTerm.toLowerCase();f=f.filter(o=>(o.title||'').toLowerCase().includes(t)||(o.solicitationNumber||'').toLowerCase().includes(t)||(o.department||'').toLowerCase().includes(t));}
+          f.sort((a,b)=>b.score-a.score);
+          setFilteredOpps(f);
+        }
+
+        function applyAwardsFilters() {
+          let f=[...awards];
+          if(filterNaics!=='all') f=f.filter(a=>a.naicsCode===filterNaics);
+          if(filterPsc!=='all') f=f.filter(a=>a.pscCode===filterPsc);
+          if(searchTerm){const t=searchTerm.toLowerCase();f=f.filter(a=>(a.primeName||'').toLowerCase().includes(t)||(a.title||'').toLowerCase().includes(t)||(a.department||'').toLowerCase().includes(t));}
+          f.sort((a,b)=>b.score-a.score);
+          setFilteredAwards(f);
+        }
+
+        function applyStateSolFilters() {
+          let f=[...stateSolicitations];
+          if(filterSource!=='all') f=f.filter(b=>b.source===filterSource);
+          if(filterClass!=='all') f=f.filter(b=>b.classCodes&&b.classCodes.includes(filterClass));
+          if(filterAgencyType!=='all') f=f.filter(b=>b.agencyType===filterAgencyType);
+          if(filterHUB==='hub') f=f.filter(b=>b.hubRequired);
+          if(filterRegion!=='all') f=f.filter(b=>b.region===filterRegion);
+          if(searchTerm){const t=searchTerm.toLowerCase();f=f.filter(b=>(b.title||'').toLowerCase().includes(t)||(b.agency||'').toLowerCase().includes(t)||(b.bidNumber||'').toLowerCase().includes(t));}
+          f.sort((a,b)=>(b.score||0)-(a.score||0));
+          setFilteredStateSolicitations(f);
+        }
+        function applyStateAwardFilters() {
+          let f=[...stateAwards];
+          if(filterSource!=='all') f=f.filter(b=>b.source===filterSource);
+          if(filterClass!=='all') f=f.filter(b=>b.classCodes&&b.classCodes.includes(filterClass));
+          if(filterAgencyType!=='all') f=f.filter(b=>b.agencyType===filterAgencyType);
+          if(filterRegion!=='all') f=f.filter(b=>b.region===filterRegion);
+          if(searchTerm){const t=searchTerm.toLowerCase();f=f.filter(b=>(b.title||'').toLowerCase().includes(t)||(b.agency||'').toLowerCase().includes(t)||(b.bidNumber||'').toLowerCase().includes(t));}
+          f.sort((a,b)=>(b.score||0)-(a.score||0));
+          setFilteredStateAwards(f);
+        }
+
+        async function fetchBulk(url) {
+          const res=await fetch(url);
+          if(!res.ok){const txt=await res.text();throw new Error('SAM.gov '+res.status+': '+txt.substring(0,200));}
+          const data=await res.json();
+          return data.opportunitiesData||[];
+        }
+
+        // -- SCAN SOLICITATIONS
+        async function scanSAM() {
+          setLoading(true);
+          const today=new Date(), from=new Date();
+          from.setDate(today.getDate()-90);
+          const PSC_PULLS=[
+            {name:'PSC 7510 Office Supplies',psc:'7510'},{name:'PSC 7520 Office Devices',psc:'7520'},
+            {name:'PSC 7530 Stationery',psc:'7530'},
+            {name:'PSC 6510 Medical Consumables',psc:'6510'},
+            {name:'PSC 6532 Surgical Clothing/PPE',psc:'6532'},
+            {name:'PSC 6540 Medical Surgical Supplies',psc:'6540'},
+            {name:'PSC 6545 Medical Kits & Outfits',psc:'6545'},
+            {name:'PSC 7930 Cleaning Compounds',psc:'7930'},
+            {name:'PSC 8125 Toiletries & Personal Care',psc:'8125'},
+            {name:'PSC 8415 Special Clothing',psc:'8415'},
+          ];
+          const NAICS_PULLS=[
+            {name:'NAICS 424120 Office Supplies',naics:'424120'},{name:'NAICS 423450 Medical Equipment',naics:'423450'},
+            {name:'NAICS 423720 HVAC Equipment',naics:'423720'},{name:'NAICS 424990 Misc Nondurable',naics:'424990'},
+            {name:'NAICS 492110 Couriers',naics:'492110'},{name:'NAICS 561320 Staffing',naics:'561320'},
+          ];
+          const SETASIDE_PULLS=[
+            {name:'TX -- SDVOSB',state:'TX',setAside:'SDVOSBC'},{name:'TX -- Small Business',state:'TX',setAside:'SBA'},
+            {name:'National -- SDVOSB',state:null,setAside:'SDVOSBC'},
+          ];
+          const ALL_PULLS=[...PSC_PULLS,...NAICS_PULLS,...SETASIDE_PULLS];
+          const TOTAL=ALL_PULLS.length;
+          setScanProgress({current:0,total:TOTAL,status:'Initializing targeted scan...'});
+          try {
+            const allRaw=[];
+            for(let i=0;i<ALL_PULLS.length;i++){
+              const pull=ALL_PULLS[i];
+              setScanProgress({current:i+1,total:TOTAL,status:'Pull '+(i+1)+'/'+TOTAL+' -- '+pull.name+'...'});
+              const params=new URLSearchParams({api_key:SAM_API_KEY,limit:'1000',ptype:'o,p,k',postedFrom:fmtDate(from),postedTo:fmtDate(today)});
+              if(pull.psc)      params.append('classificationCode',pull.psc);
+              if(pull.naics)    params.append('naicsCode',pull.naics);
+              if(pull.state)    params.append('state',pull.state);
+              if(pull.setAside) params.append('typeOfSetAsideDescription',pull.setAside);
+              let items=[];
+              try { items=await fetchBulk('https://api.sam.gov/opportunities/v2/search?'+params.toString()); }
+              catch(e){await new Promise(r=>setTimeout(r,2000));try{items=await fetchBulk('https://api.sam.gov/opportunities/v2/search?'+params.toString());}catch(e2){}}
+              allRaw.push(...items.map(item=>mapItem(item,pull)));
+              await new Promise(r=>setTimeout(r,300));
+            }
+            setScanProgress({current:TOTAL,total:TOTAL,status:allRaw.length+' raw results -- scoring...'});
+            const naicsPriMap=Object.fromEntries(IMPERIO_NAICS.map(n=>[n.code,n.priority]));
+            const pscPriMap=Object.fromEntries(IMPERIO_PSC.map(p=>[p.code,p.priority]));
+            const uniqueMap=new Map();
+            allRaw.forEach(o=>{if(!uniqueMap.has(o.noticeId))uniqueMap.set(o.noticeId,o);});
+            const scored=Array.from(uniqueMap.values()).map(o=>Object.assign({},o,{score:scoreOpportunity(o,naicsPriMap,pscPriMap),priority:Math.min(naicsPriMap[o.naicsCode]||99,pscPriMap[o.pscCode]||99)})).filter(o=>o.score>=1).sort((a,b)=>b.score-a.score);
+            for(const opp of scored){const key='sam_opp:'+opp.noticeId;try{const ex=lsGet(key);if(ex)opp.reviewed=ex.reviewed||false;}catch(e){}lsSet(key,opp);}
+            lsSet('sam_last_scan',new Date().toISOString());
+            await loadOpportunities();
+            setScanProgress({current:TOTAL,total:TOTAL,status:'Done! '+scored.length+' matches from '+allRaw.length+' raw results.'});
+            setTimeout(()=>setScanProgress({current:0,total:0,status:''}),5000);
+          } catch(err){setScanProgress({current:0,total:0,status:'Error: '+err.message});setTimeout(()=>setScanProgress({current:0,total:0,status:''}),6000);}
+          finally { setLoading(false); }
+        }
+
+        // -- SCAN AWARDS
+        async function scanAwards() {
+          setAwardsLoading(true);
+          const today=new Date(), from=new Date();
+          from.setMonth(today.getMonth()-3);
+          const PSC_AWARD_PULLS=[
+            {name:'Awards PSC 7510 Office Supplies',psc:'7510'},{name:'Awards PSC 7520 Office Devices',psc:'7520'},
+            {name:'Awards PSC 7530 Stationery',psc:'7530'},
+            {name:'Awards PSC 6510 Medical Consumables',psc:'6510'},
+            {name:'Awards PSC 6532 Surgical Clothing/PPE',psc:'6532'},
+            {name:'Awards PSC 6540 Medical Surgical Supplies',psc:'6540'},
+            {name:'Awards PSC 6545 Medical Kits & Outfits',psc:'6545'},
+            {name:'Awards PSC 7930 Cleaning Compounds',psc:'7930'},
+            {name:'Awards PSC 8125 Toiletries & Personal Care',psc:'8125'},
+            {name:'Awards PSC 8415 Special Clothing',psc:'8415'},
+          ];
+          const NAICS_AWARD_PULLS=[
+            {name:'Awards NAICS 424120 Office Supplies',naics:'424120'},{name:'Awards NAICS 423450 Medical',naics:'423450'},
+            {name:'Awards NAICS 423720 HVAC',naics:'423720'},{name:'Awards NAICS 561320 Staffing',naics:'561320'},
+            {name:'Awards NAICS 492110 Logistics',naics:'492110'},
+          ];
+          const SWEEP_PULLS=[
+            {name:'TX Large Business',state:'TX',businessType:'large'},{name:'National Large Business',state:null,businessType:'large'},
+            {name:'TX Small Business',state:'TX',businessType:'small'},
+          ];
+          const ALL_PULLS=[...PSC_AWARD_PULLS,...NAICS_AWARD_PULLS,...SWEEP_PULLS];
+          const ATOTAL=ALL_PULLS.length;
+          setAwardsProgress({current:0,total:ATOTAL,status:'Initializing awards scan...'});
+          try {
+            const allRaw=[];
+            for(let i=0;i<ALL_PULLS.length;i++){
+              const pull=ALL_PULLS[i];
+              setAwardsProgress({current:i+1,total:ATOTAL,status:'Pull '+(i+1)+'/'+ATOTAL+' -- '+pull.name+'...'});
+              const params=new URLSearchParams({api_key:SAM_API_KEY,limit:'1000',ptype:'a',postedFrom:fmtDate(from),postedTo:fmtDate(today)});
+              if(pull.psc) params.append('classificationCode',pull.psc);
+              if(pull.naics) params.append('naicsCode',pull.naics);
+              if(pull.state) params.append('state',pull.state);
+              if(pull.businessType==='large') params.append('businessTypes','LB');
+              if(pull.businessType==='small') params.append('businessTypes','SB');
+              let items=[];
+              try{items=await fetchBulk('https://api.sam.gov/opportunities/v2/search?'+params.toString());}
+              catch(e){await new Promise(r=>setTimeout(r,2000));try{items=await fetchBulk('https://api.sam.gov/opportunities/v2/search?'+params.toString());}catch(e2){}}
+              allRaw.push(...items.map(item=>mapAward(item,pull)));
+              await new Promise(r=>setTimeout(r,300));
+            }
+            setAwardsProgress({current:ATOTAL,total:ATOTAL,status:allRaw.length+' raw awards -- scoring...'});
+            const naicsPriMap=Object.fromEntries(IMPERIO_NAICS.map(n=>[n.code,n.priority]));
+            const pscPriMap=Object.fromEntries(IMPERIO_PSC.map(p=>[p.code,p.priority]));
+            const uniqueMap=new Map();
+            allRaw.forEach(a=>{if(!uniqueMap.has(a.awardId))uniqueMap.set(a.awardId,a);});
+            const scored=Array.from(uniqueMap.values()).map(a=>Object.assign({},a,{score:scoreAward(a,naicsPriMap,pscPriMap)})).filter(a=>a.score>=1).sort((a,b)=>b.score-a.score);
+            for(const award of scored) lsSet('sam_award:'+award.awardId,award);
+            lsSet('sam_last_awards_scan',new Date().toISOString());
+            await loadAwards();
+            setAwardsProgress({current:ATOTAL,total:ATOTAL,status:'Done! '+scored.length+' prime contracts from '+allRaw.length+' raw awards.'});
+            setTimeout(()=>setAwardsProgress({current:0,total:0,status:''}),5000);
+          } catch(err){setAwardsProgress({current:0,total:0,status:'Error: '+err.message});setTimeout(()=>setAwardsProgress({current:0,total:0,status:''}),6000);}
+          finally { setAwardsLoading(false); }
+        }
+
+        // -- STATE BID CSV IMPORT
+        function handleCsvImport(rows, importType) {
+          for (const opp of rows) {
+            const existing = lsGet('imp_state_bid:' + opp.noticeId);
+            if (existing && existing.reviewed) continue;
+            lsSet('imp_state_bid:' + opp.noticeId, opp);
+          }
+          loadStateBids();
+          // Switch to correct tab after import
+          if (importType === 'award') setActiveTab('stateawards');
+          else setActiveTab('statesolicitations');
+        }
+
+        // -- STATE BID ACTIONS
+        function saveStateBid(opp) {
+          const key = 'imp_state_bid:' + opp.noticeId;
+          lsSet(key, opp);
+          loadStateBids();
+          setShowStateBidModal(false);
+          setEditingStateBid(null);
+        }
+        function deleteStateBid(noticeId) {
+          if(confirm('Remove this state/local bid?')) { lsDel('imp_state_bid:'+noticeId); loadStateBids(); }
+        }
+        function markStateBidReviewed(noticeId) {
+          const key='imp_state_bid:'+noticeId;
+          const b=lsGet(key);
+          if(b){b.reviewed=true;lsSet(key,b);loadStateBids();}
+        }
+        function addStateBidToLead(bid) {
+          setCapSeedAward({
+            primeName: bid.agency || bid.title,
+            contractNumber: bid.bidNumber,
+            department: bid.agency,
+            awardAmount: bid.estimatedValue,
+            awardDate: bid.postedDate,
+            state: 'TX',
+            uiLink: bid.solicitationUrl || '',
+            stage: 'identified',
+            notes: bid.hubRequired ? 'HUB REQUIRED -- '+bid.hubGoal+' goal. HUB dollar target: $'+(bid.hubDollarTarget||0).toLocaleString() : '',
+          });
+          setAddingLead(true);
+          setActiveTab('pipeline');
+        }
+
+        // -- FEDERAL ACTIONS
+        async function markReviewed(noticeId){try{const k='sam_opp:'+noticeId;const o=lsGet(k);if(o){o.reviewed=true;lsSet(k,o);await loadOpportunities();}}catch(e){}}
+        async function deleteOpp(noticeId){if(confirm('Delete this opportunity?')){lsDel('sam_opp:'+noticeId);await loadOpportunities();}}
+        async function deleteAward(awardId){if(confirm('Remove this award?')){lsDel('sam_award:'+awardId);await loadAwards();}}
+
+        function addAwardToLead(award) {
+          setCapSeedAward({primeName:award.primeName,contractNumber:award.contractNumber,department:award.department,awardAmount:award.awardAmount,awardDate:award.awardDate,state:award.state,uiLink:award.uiLink,stage:'identified'});
+          setAddingLead(true);
+          setActiveTab('pipeline');
+        }
+
+        function handleSaveLead(form) {
+          const existing=leads.findIndex(l=>l.id===form.id);
+          let newLeads;
+          if(existing>=0){newLeads=[...leads];newLeads[existing]=form;}
+          else{newLeads=[...leads,form];}
+          saveLeads(newLeads);
+          setEditingLead(null);setAddingLead(false);setCapSeedAward(null);
+        }
+
+        // -- RENDER
+        return (
+          <div>
+            <header className="header">
+              <div className="header-content">
+                <div>
+                  <h1 className="header-title serif-font">SAM.GOV SCANNER v4</h1>
+                  <p className="header-subtitle">Federal + Texas State/Local Contract Monitor -- Imperio Talent Solutions</p>
+                </div>
+                <div className="header-actions">
+                  <button className="header-btn" onClick={()=>setShowCapStatement(true)}>Capability Statement</button>
+                  <button className="header-btn" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>Top</button>
+                  <a href="./imperio-command-center_12Mod_TEST.html" className="header-btn">Back</a>
+                </div>
+              </div>
+            </header>
+
+            <div className="container">
+              <div className="alert alert-success">
+                <span>LIVE MODE -- SAM.gov API connected. {lastScan?'Last solicitations scan: '+lastScan.toLocaleString():'No scan run yet -- click Scan Now.'}</span>
+              </div>
+
+              {/* Stats */}
+              {activeTab==='opportunities'&&(
+                <div className="stats-grid">
+                  <div className="stat-card"><div className="stat-value">{stats.total}</div><div className="stat-label">Total Solicitations</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--success)'}}>{stats.new}</div><div className="stat-label">New / Unreviewed</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--danger)'}}>{stats.urgent}</div><div className="stat-label">Urgent (7 days)</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--success)'}}>{stats.sdvosb}</div><div className="stat-label">SDVOSB Set-Asides</div></div>
+                </div>
+              )}
+              {activeTab==='awards'&&(
+                <div className="stats-grid">
+                  <div className="stat-card"><div className="stat-value" style={{color:'#93c5fd'}}>{awardsStats.total}</div><div className="stat-label">Federal Prime Contracts</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--warning)'}}>{awardsStats.largeBusiness}</div><div className="stat-label">Large Business Primes</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--success)'}}>{awardsStats.highValue}</div><div className="stat-label">High Value ($5M+)</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--imperial-gold)'}}>{awardsStats.txBased}</div><div className="stat-label">Texas-Based</div></div>
+                </div>
+              )}
+              {activeTab==='statesolicitations'&&(
+                <div className="stats-grid">
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--tx-green)'}}>{stateSolStats.total}</div><div className="stat-label">State Open Bids</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--hub-light)'}}>{stateSolStats.hubRequired}</div><div className="stat-label">HUB Required</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--danger)'}}>{stateSolStats.urgent}</div><div className="stat-label">Urgent (&le;7 days)</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--imperial-gold)'}}>{stateSolStats.highScore}</div><div className="stat-label">High Priority (&ge;100pts)</div></div>
+                </div>
+              )}
+              {activeTab==='stateawards'&&(
+                <div className="stats-grid">
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--blue-light)'}}>{stateAwardStats.total}</div><div className="stat-label">TX Prime Targets</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--success)'}}>{stateAwardStats.highValue}</div><div className="stat-label">$50K+ Contracts</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--warning)'}}>{stateAwardStats.recent}</div><div className="stat-label">Posted Last 30 Days</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--imperial-gold)'}}>{stateAwardStats.withContact}</div><div className="stat-label">Has Contact Info</div></div>
+                </div>
+              )}
+              {activeTab==='pipeline'&&(
+                <div className="stats-grid">
+                  <div className="stat-card"><div className="stat-value" style={{color:'#93c5fd'}}>{leads.length}</div><div className="stat-label">Total Leads</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--warning)'}}>{leads.filter(l=>l.stage==='proposal').length}</div><div className="stat-label">In Proposal</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--success)'}}>{leads.filter(l=>l.stage==='closed').length}</div><div className="stat-label">Closed / Won</div></div>
+                  <div className="stat-card"><div className="stat-value" style={{color:'var(--danger)'}}>{leads.filter(l=>{if(!l.followUpDate)return false;const d=Math.ceil((new Date(l.followUpDate)-new Date())/86400000);return d>=0&&d<=3;}).length}</div><div className="stat-label">Follow-Ups Due</div></div>
+                </div>
+              )}
+
+              {/* NAICS/PSC chips -- federal tabs only */}
+              {(activeTab==='opportunities'||activeTab==='awards')&&(
+                <>
+                  <div className="section">
+                    <h2 className="section-title serif-font">NAICS Codes (P1: Procurement | P2 | P3)</h2>
+                    <div className="naics-list">{IMPERIO_NAICS.map(n=><div key={n.code} className={'naics-chip priority-'+n.priority}><span className="naics-code">{n.code}</span><span className="naics-desc">{n.description}</span></div>)}</div>
+                  </div>
+                  <div className="section">
+                    <h2 className="section-title serif-font">PSC Codes (P1: Office/Consumables/Janitorial | P2: Clothing/Furniture ⚠️ | P3)</h2>
+                    <div className="naics-list">{IMPERIO_PSC.map(p=><div key={p.code} className={'naics-chip priority-'+p.priority}><span className="naics-code">{p.code}</span><span className="naics-desc">{p.description}</span></div>)}</div>
+                  </div>
+                </>
+              )}
+
+              {/* Texas CLASS chips -- state tabs only */}
+              {(activeTab==='statesolicitations'||activeTab==='stateawards')&&(
+                <>
+                  <div className="hub-law-box">
+                    <div className="hub-law-title">⚖️ Texas HUB Law -- Your Legal Leverage (Texas Gov. Code §2161)</div>
+                    <div className="hub-law-text">
+                      Any Texas state agency, university, or public entity spending over the bid threshold <strong>MUST</strong> make a good faith effort to subcontract with HUB-certified businesses. Imperio is <strong>Texas VetHUB certified</strong> -- this is a legal mandate.
+                      <div className="hub-goals-grid">
+                        {HUB_GOALS.map(g=>(
+                          <div key={g.agencyType} className="hub-goal-item">
+                            <span className="hub-goal-agency">{g.agencyType}</span>
+                            <span className="hub-goal-pct">{g.goal}</span>
+                            <span style={{fontSize:'0.65rem',color:'var(--text-secondary)'}}> HUB goal</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="section">
+                    <h2 className="section-title serif-font" style={{color:'var(--tx-green)'}}>Texas CLASS Codes (P1 Priority | P2)</h2>
+                    <div className="naics-list">{TEXAS_CLASS_CODES.map(c=><div key={c.code} className={'naics-chip priority-'+c.priority}><span className="naics-code">CLASS {c.code}</span><span className="naics-desc">{c.description}</span></div>)}</div>
+                  </div>
+                </>
+              )}
+
+              {/* Controls */}
+              <div className="section">
+                {/* Tab row */}
+                <div style={{display:'flex',gap:'0.5rem',marginBottom:'1rem',borderBottom:'1px solid var(--border-color)',paddingBottom:'0.875rem',flexWrap:'wrap'}}>
+                  <button className={'btn '+(activeTab==='opportunities'?'btn-primary':'btn-secondary')} onClick={()=>setActiveTab('opportunities')} disabled={loading||awardsLoading}>
+                    🎯 Fed Solicitations ({opportunities.length})
+                  </button>
+                  <button className={'btn '+(activeTab==='awards'?'btn-primary':'btn-secondary')} onClick={()=>setActiveTab('awards')} disabled={loading||awardsLoading} style={activeTab==='awards'?{borderColor:'#3b82f6',color:'#93c5fd',backgroundColor:'rgba(59,130,246,0.15)'}:{}}>
+                    🏆 Fed Prime Targets ({awards.length})
+                  </button>
+                  <button className={'btn '+(activeTab==='statesolicitations'?'btn-primary':'btn-secondary')} onClick={()=>setActiveTab('statesolicitations')} disabled={loading||awardsLoading} style={activeTab==='statesolicitations'?{borderColor:'var(--tx-green)',color:'var(--tx-green)',backgroundColor:'rgba(16,185,129,0.12)'}:{}}>
+                    🏫 TX Solicitations ({stateSolicitations.length})
+                  </button>
+                  <button className={'btn '+(activeTab==='stateawards'?'btn-primary':'btn-secondary')} onClick={()=>setActiveTab('stateawards')} disabled={loading||awardsLoading} style={activeTab==='stateawards'?{borderColor:'var(--blue-light)',color:'var(--blue-light)',backgroundColor:'rgba(147,197,253,0.12)'}:{}}>
+                    🏛 TX Prime Targets ({stateAwards.length})
+                  </button>
+                  <button className={'btn '+(activeTab==='pipeline'?'btn-primary':'btn-secondary')} onClick={()=>setActiveTab('pipeline')} disabled={loading||awardsLoading} style={activeTab==='pipeline'?{borderColor:'#f97316',color:'#fb923c',backgroundColor:'rgba(249,115,22,0.15)'}:{}}>
+                    📋 Pipeline ({leads.length})
+                  </button>
+                  <div style={{marginLeft:'auto',display:'flex',gap:'0.4rem',flexWrap:'wrap'}}>
+                    {activeTab==='opportunities'&&<button className="btn btn-primary" onClick={scanSAM} disabled={loading||awardsLoading}>{loading?'Scanning...':'🔍 Scan Now'}</button>}
+                    {activeTab==='awards'&&<button className="btn btn-primary" onClick={scanAwards} disabled={loading||awardsLoading} style={{borderColor:'#3b82f6',color:'#93c5fd',backgroundColor:'rgba(59,130,246,0.15)'}}>{awardsLoading?'Scanning...':'🏆 Scan Now'}</button>}
+                    {activeTab==='statesolicitations'&&<button className="btn btn-primary" onClick={()=>setShowStateBidModal(true)} style={{borderColor:'var(--tx-green)',color:'var(--tx-green)',backgroundColor:'rgba(16,185,129,0.12)'}}>+ Add Manual</button>}
+                    <button className="btn btn-secondary" onClick={loadAll}>🔄</button>
+                    <button className="btn btn-secondary" style={{borderColor:'var(--danger)',color:'var(--danger)'}} onClick={()=>{if(confirm('Clear ALL cached federal scan data?')){Object.keys(localStorage).filter(k=>k.startsWith('sam_opp:')||k.startsWith('sam_award:')||k.startsWith('sam_last')).forEach(k=>localStorage.removeItem(k));loadAll();}}}>Clear Cache</button>
+                  </div>
+                </div>
+
+                <ProgressBar progress={scanProgress} label="SOLICITATIONS SCAN" color="var(--imperial-gold)" />
+                <ProgressBar progress={awardsProgress} label="AWARDS SCAN" color="#3b82f6" />
+
+                {/* Filters */}
+                {activeTab==='opportunities'&&(
+                  <div className="filters">
+                    <div className="filter-group"><label className="filter-label">NAICS</label><select className="filter-select" value={filterNaics} onChange={e=>setFilterNaics(e.target.value)}><option value="all">All NAICS</option>{IMPERIO_NAICS.map(n=><option key={n.code} value={n.code}>{n.code} - {n.description}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">PSC</label><select className="filter-select" value={filterPsc} onChange={e=>setFilterPsc(e.target.value)}><option value="all">All PSC</option>{IMPERIO_PSC.map(p=><option key={p.code} value={p.code}>{p.code} - {p.description}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">Set-Aside</label><select className="filter-select" value={filterSetAside} onChange={e=>setFilterSetAside(e.target.value)}><option value="all">All Opportunities</option><option value="SDVOSB">SDVOSB</option><option value="Small Business">Small Business</option><option value="open">Open Market</option></select></div>
+                    <div className="filter-group"><label className="filter-label">Contract Value</label><select className="filter-select" value={filterValue} onChange={e=>setFilterValue(e.target.value)}><option value="all">All Values</option><option value="under250k">Under $250K</option><option value="250k-500k">$250K - $500K</option><option value="500k-5m">$500K - $5M</option><option value="over5m">Over $5M</option></select></div>
+                    <div className="filter-group"><label className="filter-label">Status</label><select className="filter-select" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="all">All</option><option value="new">New</option><option value="reviewed">Reviewed</option></select></div>
+                    <div className="filter-group"><label className="filter-label">Search</label><input type="text" className="filter-input" placeholder="Title, solicitation #, dept..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
+                  </div>
+                )}
+                {activeTab==='awards'&&(
+                  <div className="filters">
+                    <div className="filter-group"><label className="filter-label">NAICS</label><select className="filter-select" value={filterNaics} onChange={e=>setFilterNaics(e.target.value)}><option value="all">All NAICS</option>{IMPERIO_NAICS.map(n=><option key={n.code} value={n.code}>{n.code} - {n.description}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">PSC</label><select className="filter-select" value={filterPsc} onChange={e=>setFilterPsc(e.target.value)}><option value="all">All PSC</option>{IMPERIO_PSC.map(p=><option key={p.code} value={p.code}>{p.code} - {p.description}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">Search</label><input type="text" className="filter-input" placeholder="Prime, title, dept..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
+                  </div>
+                )}
+                {(activeTab==='statesolicitations'||activeTab==='stateawards')&&(
+                  <div className="filters">
+                    <div className="filter-group"><label className="filter-label">Source</label><select className="filter-select" value={filterSource} onChange={e=>setFilterSource(e.target.value)}><option value="all">All Sources</option><option value="ESBD">ESBD</option><option value="ESC">Regional ESC</option><option value="ISD">School District</option><option value="TxSmartBuy">TxSmartBuy</option><option value="City">City</option><option value="County">County</option></select></div>
+                    <div className="filter-group"><label className="filter-label">CLASS Code</label><select className="filter-select" value={filterClass} onChange={e=>setFilterClass(e.target.value)}><option value="all">All CLASS</option>{TEXAS_CLASS_CODES.map(c=><option key={c.code} value={c.code}>CLASS {c.code} - {c.description}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">Agency Type</label><select className="filter-select" value={filterAgencyType} onChange={e=>setFilterAgencyType(e.target.value)}><option value="all">All Types</option><option value="State">State</option><option value="University">University</option><option value="School">School District</option><option value="Hospital">Hospital</option><option value="City">City</option><option value="County">County</option><option value="ESC">ESC</option></select></div>
+                    {activeTab==='statesolicitations'&&<div className="filter-group"><label className="filter-label">HUB Status</label><select className="filter-select" value={filterHUB} onChange={e=>setFilterHUB(e.target.value)}><option value="all">All Bids</option><option value="hub">HUB Required Only</option></select></div>}
+                    <div className="filter-group"><label className="filter-label">TX Region</label><select className="filter-select" value={filterRegion} onChange={e=>setFilterRegion(e.target.value)}><option value="all">All Regions</option>{TX_REGIONS.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
+                    <div className="filter-group"><label className="filter-label">Search</label><input type="text" className="filter-input" placeholder="Title, agency, bid #..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} /></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Results */}
+              <div className="section">
+
+                {/* SOLICITATIONS TAB */}
+                {activeTab==='opportunities'&&(
+                  <div>
+                    <h2 className="section-title serif-font">Open Solicitations ({filteredOpps.length})</h2>
+                    {loading?<div className="loading"><div className="spinner"></div><p>Scanning SAM.gov...</p></div>
+                    :filteredOpps.length===0?<div className="empty-state"><div className="empty-state-icon">📭</div><h3>No Solicitations Yet</h3><p>Click Scan Now to search SAM.gov</p></div>
+                    :(
+                      <div className="opportunity-list">
+                        {filteredOpps.map(opp=>(
+                          <div key={opp.noticeId} className={'opportunity-card'+(!opp.reviewed?' new':'')+(isUrgent(opp.responseDeadline)?' urgent':'')}>
+                            <div className="opportunity-header">
+                              <div><h3 className="opportunity-title">{opp.title}</h3><p className="opportunity-solicitation">Notice ID: <b>{opp.solicitationNumber}</b></p></div>
+                              <div style={{display:'flex',gap:'0.4rem',alignItems:'center'}}>
+                                <ScoreBadge score={opp.score} />
+                                {!opp.reviewed&&<span className="status-badge active">NEW</span>}
+                              </div>
+                            </div>
+                            <div className="opportunity-meta">
+                              <div className="meta-item"><span className="meta-label">Department</span><span className="meta-value">{opp.department}</span></div>
+                              <div className="meta-item"><span className="meta-label">NAICS</span><span className="meta-value">{opp.naicsCode}</span></div>
+                              <div className="meta-item"><span className="meta-label">PSC</span><span className="meta-value">{opp.pscCode||'N/A'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Response Due</span><span className="meta-value" style={{color:isUrgent(opp.responseDeadline)?'var(--danger)':'inherit'}}>{fmtDeadline(opp.responseDeadline)}</span></div>
+                              <div className="meta-item"><span className="meta-label">Est. Value</span><span className="meta-value">{opp.estimatedValue}</span></div>
+                              <div className="meta-item"><span className="meta-label">Location</span><span className="meta-value">{opp.placeOfPerformance}</span></div>
+                            </div>
+                            {opp.description&&<p className="opportunity-description">{opp.description.substring(0,240)}...</p>}
+                            <div className="opportunity-tags">
+                              {opp.setAside&&opp.setAside.includes('SDVOSB')&&<span className="tag sdvosb">SDVOSB SET-ASIDE</span>}
+                              {(!opp.setAside||opp.setAside.trim()==='')&&<span className="tag open-market">OPEN MARKET</span>}
+                              {isUrgent(opp.responseDeadline)&&<span className="tag urgent">URGENT</span>}
+                              {opp.type&&<span className="tag">{opp.type}</span>}
+                            </div>
+                            <div className="opportunity-actions">
+                              <button className="action-btn" onClick={()=>window.open(opp.uiLink,'_blank')}>View on SAM.gov</button>
+                              {!opp.reviewed&&<button className="action-btn" onClick={()=>markReviewed(opp.noticeId)}>Mark Reviewed</button>}
+                              <button className="action-btn" onClick={()=>deleteOpp(opp.noticeId)}>Delete</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* AWARDS TAB */}
+                {activeTab==='awards'&&(
+                  <div>
+                    <h2 className="section-title serif-font" style={{color:'#93c5fd'}}>Prime Contracts -- Sub Opportunities ({filteredAwards.length})</h2>
+                    <p style={{fontSize:'0.8rem',color:'var(--text-secondary)',marginBottom:'1rem'}}>Awarded contracts from the last 3 months. Large business primes are required to subcontract.{lastAwardsScan&&' Last scanned: '+lastAwardsScan.toLocaleString()}</p>
+                    {awardsLoading?<div className="loading"><div className="spinner"></div><p>Scanning award contracts...</p></div>
+                    :filteredAwards.length===0?<div className="empty-state"><div className="empty-state-icon">🏆</div><h3>No Award Contracts Yet</h3><p>Click Scan Now to find large primes to sub under</p></div>
+                    :(
+                      <div className="opportunity-list">
+                        {filteredAwards.map(award=>(
+                          <div key={award.awardId} className="opportunity-card" style={{borderLeft:award.businessSize==='Large'?'3px solid #3b82f6':'3px solid var(--border-color)'}}>
+                            <div className="opportunity-header">
+                              <div><h3 className="opportunity-title">{award.title}</h3><p className="opportunity-solicitation">Contract: {award.contractNumber}</p></div>
+                              <div style={{display:'flex',gap:'0.4rem',alignItems:'center'}}>
+                                <ScoreBadge score={award.score} blue={true} />
+                                {award.businessSize==='Large'&&<span style={{padding:'0.2rem 0.5rem',borderRadius:'0.25rem',fontSize:'0.7rem',fontWeight:'700',backgroundColor:'rgba(59,130,246,0.15)',color:'#93c5fd',border:'1px solid #3b82f6'}}>LARGE PRIME</span>}
+                              </div>
+                            </div>
+                            <div className="opportunity-meta">
+                              <div className="meta-item"><span className="meta-label">Prime Contractor</span><span className="meta-value" style={{color:'var(--imperial-gold)',fontWeight:'700'}}>{award.primeName}</span></div>
+                              <div className="meta-item"><span className="meta-label">Department</span><span className="meta-value">{award.department}</span></div>
+                              <div className="meta-item"><span className="meta-label">NAICS</span><span className="meta-value">{award.naicsCode}</span></div>
+                              <div className="meta-item"><span className="meta-label">PSC</span><span className="meta-value">{award.pscCode||'N/A'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Award Value</span><span className="meta-value" style={{color:'var(--success)',fontWeight:'700'}}>{award.awardAmount}</span></div>
+                              <div className="meta-item"><span className="meta-label">Award Date</span><span className="meta-value">{award.awardDate?new Date(award.awardDate).toLocaleDateString():'N/A'}</span></div>
+                            </div>
+                            {award.description&&<p className="opportunity-description">{award.description.substring(0,240)}...</p>}
+                            <div className="opportunity-tags">
+                              {award.businessSize==='Large'&&<span className="tag" style={{borderColor:'#3b82f6',color:'#93c5fd'}}>SUB OPPORTUNITY</span>}
+                              <span className="tag">{award.placeOfPerformance}</span>
+                            </div>
+                            <div className="opportunity-actions">
+                              <button className="action-btn" onClick={()=>window.open(award.uiLink,'_blank')}>View Contract</button>
+                              <button className="action-btn" onClick={()=>window.open('https://www.google.com/search?q='+encodeURIComponent(award.primeName+' subcontracting'),'_blank')}>Research Prime</button>
+                              <button className="action-btn" onClick={()=>window.open('https://sam.gov/search/?index=eb&page=1&pageSize=25&sort=-score&sfm%5Bstatus%5D%5B0%5D=active&sfm%5BentityType%5D=entity&sfm%5BentityName%5D='+encodeURIComponent(award.primeName),'_blank')}>SAM Profile</button>
+                              <button className="action-btn" style={{color:'#fb923c',borderColor:'#f97316'}} onClick={()=>addAwardToLead(award)}>Add to Pipeline</button>
+                              <button className="action-btn" style={{color:'var(--danger)'}} onClick={()=>deleteAward(award.awardId)}>Delete</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TX SOLICITATIONS TAB */}
+                {activeTab==='statesolicitations'&&(
+                  <div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem',flexWrap:'wrap',gap:'0.5rem'}}>
+                      <h2 className="section-title serif-font" style={{color:'var(--tx-green)',margin:0}}>TX Open Solicitations ({filteredStateSolicitations.length})</h2>
+                      <div style={{display:'flex',gap:'0.5rem'}}>
+                        <button className="btn btn-secondary" style={{borderColor:'var(--tx-green)',color:'var(--tx-green)'}} onClick={()=>{if(typeof XLSX==='undefined')return;const rows=filteredStateSolicitations.map(b=>({'Title':b.title,'Agency':b.agency,'Bid #':b.bidNumber,'Due Date':b.dueDate,'Value':b.estimatedValue,'HUB Required':b.hubRequired?'Yes':'No','CLASS Codes':(b.classCodes||[]).join(', '),'Score':b.score,'Status':b.status,'URL':b.solicitationUrl}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'TXSolicitations');XLSX.writeFile(wb,'Imperio_TXSolicitations_'+new Date().toISOString().split('T')[0]+'.xlsx');}}>Export Excel</button>
+                        <button className="btn btn-secondary" style={{borderColor:'var(--danger)',color:'var(--danger)'}} onClick={()=>{if(confirm('Clear TX solicitations?')){lsList('imp_state_bid:').filter(k=>{const v=lsGet(k);return v&&v.importType!=='award';}).forEach(k=>lsDel(k));loadStateBids();}}}>Clear</button>
+                      </div>
+                    </div>
+                    <div style={{marginBottom:'1.25rem'}}>
+                      <div style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--tx-green)',marginBottom:'0.4rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>📋 Import — Open Solicitations (Bidding)</div>
+                      <div style={{fontSize:'0.7rem',color:'var(--text-secondary)',marginBottom:'0.5rem'}}>On ESBD: Solicitations tab → Status = <strong style={{color:'var(--text-primary)'}}>Posted</strong> → Class/Item codes (47500, 61500, 62000) → Export to CSV</div>
+                      <CsvDropZone onImport={handleCsvImport} importType="solicitation" label="Drop Open Solicitations CSV here" />
+                    </div>
+                    {filteredStateSolicitations.length===0?(
+                      <div className="empty-state">
+                        <div className="empty-state-icon">📋</div>
+                        <h3 style={{color:'var(--tx-green)'}}>No TX Solicitations Yet</h3>
+                        <p>Export from ESBD and drop the CSV above, or click + Add Manual to enter one directly.</p>
+                        <div style={{marginTop:'1rem',display:'flex',gap:'0.75rem',justifyContent:'center'}}>
+                          <button className="action-btn" style={{borderColor:'var(--tx-green)',color:'var(--tx-green)',padding:'0.5rem 1rem'}} onClick={()=>window.open('https://www.txsmartbuy.gov/esbd','_blank')}>Open ESBD →</button>
+                          <button className="btn btn-primary" style={{borderColor:'var(--tx-green)',color:'var(--tx-green)',backgroundColor:'rgba(16,185,129,0.12)'}} onClick={()=>setShowStateBidModal(true)}>+ Add Manual</button>
+                        </div>
+                      </div>
+                    ):(
+                      <div className="opportunity-list">
+                        {filteredStateSolicitations.map(bid=>(
+                          <div key={bid.noticeId} className={'opportunity-card'+(!bid.reviewed?' new':'')+(isUrgent(bid.dueDate)?' urgent':'')} style={{borderLeft:bid.hubRequired?'3px solid var(--hub-color)':'3px solid var(--tx-green)'}}>
+                            <div className="opportunity-header">
+                              <div>
+                                <h3 className="opportunity-title" style={{color:bid.hubRequired?'var(--hub-light)':'var(--tx-green)'}}>{bid.title}</h3>
+                                <p className="opportunity-solicitation"><b style={{color:'var(--tx-green)'}}>{bid.source}</b>{bid.bidNumber&&<span> &bull; <b>{bid.bidNumber}</b></span>}{bid.status&&<span style={{marginLeft:'0.5rem',fontSize:'0.7rem',color:'var(--text-secondary)'}}>[{bid.status}]</span>}</p>
+                              </div>
+                              <div style={{display:'flex',gap:'0.4rem',alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+                                <ScoreBadge score={bid.score} purple={true} />
+                                {bid.hubRequired&&<span style={{padding:'0.2rem 0.5rem',borderRadius:'0.25rem',fontSize:'0.7rem',fontWeight:'700',backgroundColor:'rgba(168,85,247,0.2)',color:'var(--hub-light)',border:'1px solid var(--hub-color)'}}>⚖️ HUB {bid.hubGoal||'REQ'}</span>}
+                                {!bid.reviewed&&<span className="status-badge active">NEW</span>}
+                              </div>
+                            </div>
+                            <div className="opportunity-meta">
+                              <div className="meta-item"><span className="meta-label">🏛 Agency</span><span className="meta-value" style={{fontWeight:'700'}}>{bid.agency||'N/A'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Type</span><span className="meta-value">{bid.agencyType}</span></div>
+                              <div className="meta-item"><span className="meta-label">Due Date</span><span className="meta-value" style={{color:isUrgent(bid.dueDate)?'var(--danger)':'inherit'}}>{bid.dueDate?fmtDeadline(bid.dueDate):'Not specified'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Est. Value</span><span className="meta-value" style={{color:'var(--success)',fontWeight:'700'}}>{bid.estimatedValue||'Not disclosed'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Region</span><span className="meta-value">{bid.region||'TX'}</span></div>
+                            </div>
+                            {bid.classCodes&&bid.classCodes.length>0&&<div style={{display:'flex',gap:'0.4rem',marginBottom:'0.5rem',flexWrap:'wrap'}}>{bid.classCodes.map(c=>{const cc=TEXAS_CLASS_CODES.find(x=>x.code===c);return <span key={c} className="tag local">CLASS {c}{cc?' - '+cc.description:''}</span>;})}</div>}
+                            <div className="opportunity-tags">
+                              {bid.hubRequired&&<span className="tag hub">⚖️ HUB REQUIRED</span>}
+                              {isUrgent(bid.dueDate)&&<span className="tag urgent">URGENT</span>}
+                              <span className="tag">{bid.source}</span>
+                            </div>
+                            <div className="opportunity-actions">
+                              {bid.solicitationUrl&&<button className="action-btn" style={{borderColor:'var(--tx-green)',color:'var(--tx-green)'}} onClick={()=>window.open(bid.solicitationUrl,'_blank')}>View Bid →</button>}
+                              <button className="action-btn" style={{color:'#fb923c',borderColor:'#f97316'}} onClick={()=>addStateBidToLead(bid)}>Add to Pipeline</button>
+                              {!bid.reviewed&&<button className="action-btn" onClick={()=>markStateBidReviewed(bid.noticeId)}>Mark Reviewed</button>}
+                              <button className="action-btn" style={{color:'var(--danger)'}} onClick={()=>deleteStateBid(bid.noticeId)}>Delete</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TX PRIME TARGETS TAB */}
+                {activeTab==='stateawards'&&(
+                  <div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem',flexWrap:'wrap',gap:'0.5rem'}}>
+                      <h2 className="section-title serif-font" style={{color:'var(--blue-light)',margin:0}}>TX Prime Targets — Sub Opportunities ({filteredStateAwards.length})</h2>
+                      <div style={{display:'flex',gap:'0.5rem'}}>
+                        <button className="btn btn-secondary" style={{borderColor:'var(--blue-light)',color:'var(--blue-light)'}} onClick={()=>{if(typeof XLSX==='undefined')return;const rows=filteredStateAwards.map(b=>({'Title':b.title,'Prime/Vendor':b.agency,'Contract #':b.bidNumber,'Award Date':b.postedDate,'Value':b.estimatedValue,'Contact Name':b.contactName,'Contact Email':b.contactEmail,'Contact Phone':b.contactPhone,'CLASS Codes':(b.classCodes||[]).join(', '),'Score':b.score,'URL':b.solicitationUrl}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'TXPrimeTargets');XLSX.writeFile(wb,'Imperio_TXPrimes_'+new Date().toISOString().split('T')[0]+'.xlsx');}}>Export Excel</button>
+                        <button className="btn btn-secondary" style={{borderColor:'var(--danger)',color:'var(--danger)'}} onClick={()=>{if(confirm('Clear TX prime targets?')){lsList('imp_state_bid:').filter(k=>{const v=lsGet(k);return v&&v.importType==='award';}).forEach(k=>lsDel(k));loadStateBids();}}}>Clear</button>
+                      </div>
+                    </div>
+                    <div style={{marginBottom:'1.25rem'}}>
+                      <div style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--blue-light)',marginBottom:'0.4rem',textTransform:'uppercase',letterSpacing:'0.5px'}}>🏆 Import — Awarded Contracts (Prime Outreach)</div>
+                      <div style={{fontSize:'0.7rem',color:'var(--text-secondary)',marginBottom:'0.5rem'}}>On ESBD: <strong style={{color:'var(--text-primary)'}}>Awards No Solicitation</strong> tab → Class/Item codes (47500, 61500, 62000) → date range last 90 days → Export to CSV</div>
+                      <CsvDropZone onImport={handleCsvImport} importType="award" label="Drop Awarded Contracts CSV here" />
+                    </div>
+                    <p style={{fontSize:'0.8rem',color:'var(--text-secondary)',marginBottom:'1rem'}}>These vendors hold active Texas state contracts. Contact them directly about your HUB subcontracting capabilities — they have a legal obligation to engage certified businesses.</p>
+                    {filteredStateAwards.length===0?(
+                      <div className="empty-state">
+                        <div className="empty-state-icon">🏛</div>
+                        <h3 style={{color:'var(--blue-light)'}}>No TX Prime Targets Yet</h3>
+                        <p>Go to ESBD → Awards No Solicitation tab → filter by Class/Item code → Export CSV → drop above.</p>
+                        <div style={{marginTop:'1rem',display:'flex',gap:'0.75rem',justifyContent:'center'}}>
+                          <button className="action-btn" style={{borderColor:'var(--blue-light)',color:'var(--blue-light)',padding:'0.5rem 1rem'}} onClick={()=>window.open('https://www.txsmartbuy.gov/esbd','_blank')}>Open ESBD →</button>
+                          <button className="action-btn" style={{borderColor:'var(--hub-color)',color:'var(--hub-light)',padding:'0.5rem 1rem'}} onClick={()=>window.open('https://www.txsmartbuy.gov/hub','_blank')}>HUB Directory →</button>
+                        </div>
+                      </div>
+                    ):(
+                      <div className="opportunity-list">
+                        {filteredStateAwards.map(bid=>(
+                          <div key={bid.noticeId} className="opportunity-card" style={{borderLeft:'3px solid var(--blue-light)'}}>
+                            <div className="opportunity-header">
+                              <div>
+                                <h3 className="opportunity-title" style={{color:'var(--blue-light)'}}>{bid.title}</h3>
+                                <p className="opportunity-solicitation"><b style={{color:'var(--blue-light)'}}>{bid.source}</b>{bid.bidNumber&&<span> &bull; PO/Contract: <b>{bid.bidNumber}</b></span>}</p>
+                              </div>
+                              <div style={{display:'flex',gap:'0.4rem',alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+                                <ScoreBadge score={bid.score} purple={true} />
+                                <span style={{padding:'0.2rem 0.5rem',borderRadius:'0.25rem',fontSize:'0.7rem',fontWeight:'700',backgroundColor:'rgba(147,197,253,0.15)',color:'var(--blue-light)',border:'1px solid var(--blue)'}}>PRIME TARGET</span>
+                              </div>
+                            </div>
+                            <div className="opportunity-meta">
+                              <div className="meta-item"><span className="meta-label">🏢 Prime / Vendor</span><span className="meta-value" style={{color:'var(--imperial-gold)',fontWeight:'700'}}>{bid.agency||'N/A'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Agency Type</span><span className="meta-value">{bid.agencyType}</span></div>
+                              <div className="meta-item"><span className="meta-label">Award Value</span><span className="meta-value" style={{color:'var(--success)',fontWeight:'700'}}>{bid.estimatedValue||'Not disclosed'}</span></div>
+                              <div className="meta-item"><span className="meta-label">Posted</span><span className="meta-value">{bid.postedDate||'N/A'}</span></div>
+                              {bid.contactName&&<div className="meta-item"><span className="meta-label">Contact</span><span className="meta-value">{bid.contactName}</span></div>}
+                              {bid.contactEmail&&<div className="meta-item"><span className="meta-label">Email</span><span className="meta-value" style={{fontSize:'0.8rem'}}>{bid.contactEmail}</span></div>}
+                              {bid.contactPhone&&<div className="meta-item"><span className="meta-label">Phone</span><span className="meta-value">{bid.contactPhone}</span></div>}
+                              <div className="meta-item"><span className="meta-label">Region</span><span className="meta-value">{bid.region||'TX'}</span></div>
+                            </div>
+                            {bid.classCodes&&bid.classCodes.length>0&&<div style={{display:'flex',gap:'0.4rem',marginBottom:'0.5rem',flexWrap:'wrap'}}>{bid.classCodes.map(c=>{const cc=TEXAS_CLASS_CODES.find(x=>x.code===c);return <span key={c} className="tag local">CLASS {c}{cc?' - '+cc.description:''}</span>;})}</div>}
+                            <div className="opportunity-actions">
+                              {bid.solicitationUrl&&<button className="action-btn" style={{borderColor:'var(--blue-light)',color:'var(--blue-light)'}} onClick={()=>window.open(bid.solicitationUrl,'_blank')}>View Contract →</button>}
+                              <button className="action-btn" onClick={()=>window.open('https://www.google.com/search?q='+encodeURIComponent((bid.agency||'')+ ' subcontracting HUB Texas'),'_blank')}>Research Prime</button>
+                              {bid.contactEmail&&<button className="action-btn" onClick={()=>window.open('mailto:'+bid.contactEmail+'?subject=Imperio%20Talent%20Solutions%20-%20HUB%20Subcontracting%20Inquiry&body=Good%20day%2C%0A%0AWe%20are%20Imperio%20Talent%20Solutions%2C%20a%20Texas%20VetHUB-certified%20SDVOSB%20specializing%20in%20medical%20supplies%2C%20office%20supplies%2C%20and%20staffing.%20We%20noticed%20your%20active%20Texas%20state%20contract%20and%20would%20like%20to%20discuss%20your%20HUB%20subcontracting%20obligations.%0A%0AAnthony%20K.%20Kelley%20Sr.%0AFounder%20%26%20CEO%20-%20Imperio%20Talent%20Solutions%0A(254)%20226-5216%20%7C%20anthony%40imperiovita.co')}>Email Prime</button>}
+                              <button className="action-btn" style={{color:'#fb923c',borderColor:'#f97316'}} onClick={()=>addStateBidToLead(bid)}>Add to Pipeline</button>
+                              <button className="action-btn" style={{color:'var(--danger)'}} onClick={()=>deleteStateBid(bid.noticeId)}>Delete</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* PIPELINE TAB */}
+                {activeTab==='pipeline'&&(
+                  <div>
+                    <h2 className="section-title serif-font" style={{color:'#fb923c'}}>Outreach Pipeline ({leads.length} leads)</h2>
+                    <KanbanBoard leads={leads} onEditLead={lead=>setEditingLead(lead)} onAddLead={()=>setAddingLead(true)} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* LEAD MODAL */}
+            {(editingLead||addingLead)&&(
+              <LeadModal
+                lead={editingLead||(capSeedAward?{id:Date.now()+'',log:[],...capSeedAward}:null)}
+                isNew={!editingLead}
+                onClose={()=>{setEditingLead(null);setAddingLead(false);setCapSeedAward(null);}}
+                onSave={handleSaveLead}
+              />
+            )}
+
+            {/* STATE BID MODAL */}
+            {showStateBidModal&&(
+              <StateBidModal
+                onClose={()=>setShowStateBidModal(false)}
+                onSave={saveStateBid}
+              />
+            )}
+
+            {/* CAP STATEMENT MODAL */}
+            {showCapStatement&&(
+              <div className="cap-modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowCapStatement(false)}>
+                <div className="cap-modal">
+                  <div className="cap-modal-header">
+                    <span className="cap-modal-title">CAPABILITY STATEMENT -- Imperio Talent Solutions</span>
+                    <button className="cap-modal-close" onClick={()=>setShowCapStatement(false)}>x</button>
+                  </div>
+                  <div className="cap-content">{generateCapStatement()}</div>
+                  <div className="cap-actions">
+                    <button className="cap-btn cap-btn-secondary" onClick={()=>setShowCapStatement(false)}>Close</button>
+                    <button className="cap-btn cap-btn-primary" onClick={()=>{const text=generateCapStatement();const blob=new Blob([text],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Imperio_Capability_Statement_'+new Date().toISOString().split('T')[0]+'.txt';a.click();}}>Download .txt</button>
+                    <button className="cap-btn cap-btn-primary" onClick={()=>{const text=generateCapStatement();navigator.clipboard.writeText(text).then(()=>alert('Copied to clipboard!')).catch(()=>{});}}>Copy to Clipboard</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.render(<SAMScanner />, document.getElementById('root'));
+    </script>
+  </body>
+</html>

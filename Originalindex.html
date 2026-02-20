@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IMPERIO LEADS</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#020617] text-slate-100 font-sans">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        const MY_CODES = ["424120", "423850", "423490", "423450", "423720", "424990", "561320", "541519", "6510", "6532", "7510"];
+
+        function App() {
+            const [leads, setLeads] = useState(JSON.parse(localStorage.getItem('strike_leads')) || []);
+            const [loading, setLoading] = useState(false);
+
+            const strike = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch("https://api.usaspending.gov/api/v2/search/spending_by_award/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            filters: { 
+                                time_period: [{start_date: "2025-01-01", end_date: "2026-12-31"}], 
+                                naics_codes: { require: MY_CODES },
+                                award_type_codes: ["A", "B", "C", "D"]
+                            },
+                            fields: ["Award ID", "Recipient Name", "Award Amount", "Description", "End Date", "Awarding Agency", "NAICS Code"],
+                            limit: 25
+                        })
+                    });
+                    const data = await res.json();
+                    setLeads(data.results || []);
+                    localStorage.setItem('strike_leads', JSON.stringify(data.results));
+                } catch (e) { alert("Strike Failed"); }
+                setLoading(false);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-6">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-6 mb-8">
+                        <h1 className="text-2xl font-black italic tracking-tighter">IMPERIO <span className="text-blue-500 underline">STRIKE-GEN</span></h1>
+                        <button onClick={strike} className="bg-blue-600 hover:bg-white hover:text-blue-600 px-8 py-3 rounded font-black text-xs transition-all">
+                            {loading ? 'PENETRATING...' : 'STRIKE FOR LEADS'}
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        {leads.length === 0 && <div className="text-center py-20 text-slate-600 font-bold uppercase tracking-widest">No Active Intelligence</div>}
+                        {leads.map((l, i) => (
+                            <div key={i} className="bg-slate-900 border border-slate-800 p-4 rounded-md hover:border-blue-500 transition-all">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[10px] bg-blue-900/40 text-blue-400 px-2 py-0.5 rounded font-bold">NAICS {l["NAICS Code"]}</span>
+                                    <span className="text-green-500 font-black text-lg">${Number(l["Award Amount"] || 0).toLocaleString()}</span>
+                                </div>
+                                <h2 className="font-bold text-white uppercase truncate text-sm mb-1">{l.Description || 'Gov Procurement'}</h2>
+                                <div className="text-[10px] text-slate-500 uppercase flex justify-between">
+                                    <span>Agency: <span className="text-slate-300">{l["Awarding Agency"]}</span></span>
+                                    <span>Expires: <span className="text-slate-300">{l["End Date"]}</span></span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
