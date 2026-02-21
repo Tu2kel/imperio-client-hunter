@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IMPERIO Client Hunter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --imperial-red: #8b0000;
+      --imperial-gold: #c5a130;
+      --dark-bg: #18181b;
+      --darker-bg: #0a0a0a;
+      --card-bg: #27272a;
+      --border-color: #3f3f46;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --blue: #3b82f6;
+      --contingency: #22c55e;
+      --retained: #3b82f6;
+      --staffing: #eab308;
+    }
+    body { font-family: 'Rajdhani', sans-serif; background: var(--dark-bg); color: var(--text-primary); line-height: 1.6; }
+    .header {
+      background: linear-gradient(to right, #7f1d1d, #450a0a);
+      border-bottom: 2px solid var(--imperial-gold);
+      padding: 1rem 1.5rem;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-content { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+    .header-title { font-family: 'Cinzel', serif; font-size: 1.75rem; font-weight: 900; color: var(--imperial-gold); letter-spacing: 2px; }
+    .header-subtitle { color: #d97706; font-size: 0.875rem; letter-spacing: 1px; }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+    .back-btn { padding: 0.5rem 1rem; background: var(--card-bg); border: 1px solid var(--imperial-gold); color: var(--imperial-gold); border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-weight: 600; }
+    .back-btn:hover { background: var(--imperial-red); }
+    .db-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); }
+    .db-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .db-dot.offline { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    .stat-card { background: var(--card-bg); border: 1px solid #422006; border-radius: 0.5rem; padding: 1.25rem; text-align: center; }
+    .stat-value { font-family: 'Cinzel', serif; font-size: 1.75rem; font-weight: 700; color: var(--imperial-gold); }
+    .stat-label { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.5px; text-transform: uppercase; }
+    .section { background: var(--card-bg); border: 1px solid #422006; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .section-title { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: var(--imperial-gold); margin-bottom: 1rem; letter-spacing: 1px; }
+    .btn { padding: 0.625rem 1.25rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 1px solid; transition: all 0.2s; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; }
+    .btn-primary { background: var(--imperial-red); color: var(--imperial-gold); border-color: var(--imperial-gold); }
+    .btn-primary:hover { background: #991b1b; }
+    .btn-secondary { background: var(--card-bg); color: var(--text-primary); border-color: var(--border-color); }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .filter-group { display: flex; flex-direction: column; }
+    .filter-label { font-size: 0.75rem; font-weight: 600; color: #d1d5db; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-select, .filter-input { padding: 0.5rem 0.75rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-size: 0.875rem; font-family: 'Rajdhani', sans-serif; }
+    .filter-select:focus, .filter-input:focus { outline: none; border-color: var(--imperial-gold); }
+    .progress-wrap { width: 100%; height: 22px; background: #18181b; border-radius: 0.5rem; overflow: hidden; border: 1px solid var(--imperial-gold); margin-bottom: 0.5rem; }
+    .progress-fill { height: 100%; background: var(--imperial-gold); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #000; }
+    .client-list { display: flex; flex-direction: column; gap: 1rem; }
+    .client-card { background: #18181b; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 1.25rem; transition: all 0.2s; border-left: 4px solid var(--border-color); }
+    .client-card:hover { border-color: var(--imperial-gold); box-shadow: 0 4px 12px rgba(197,161,48,0.1); }
+    .client-card.contingency { border-left-color: var(--contingency); }
+    .client-card.retained { border-left-color: var(--retained); }
+    .client-card.staffing { border-left-color: var(--staffing); }
+    .client-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 1rem; }
+    .client-name { font-family: 'Cinzel', serif; font-size: 1.1rem; font-weight: 700; color: var(--imperial-gold); }
+    .client-badges { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .badge { padding: 0.2rem 0.6rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+    .badge-contingency { background: rgba(34,197,94,0.15); color: var(--contingency); border: 1px solid var(--contingency); }
+    .badge-retained { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid var(--retained); }
+    .badge-staffing { background: rgba(234,179,8,0.15); color: var(--warning); border: 1px solid var(--warning); }
+    .badge-unknown { background: rgba(113,113,122,0.15); color: #a1a1aa; border: 1px solid #52525b; }
+    .badge-score { background: rgba(197,161,48,0.15); color: var(--imperial-gold); border: 1px solid var(--imperial-gold); }
+    .badge-pipeline { background: rgba(34,197,94,0.1); color: var(--success); border: 1px solid var(--success); }
+    .client-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .meta-value { font-size: 0.875rem; color: var(--text-primary); font-weight: 600; }
+    .roles-list { margin-bottom: 0.75rem; padding: 0.75rem; background: var(--card-bg); border-radius: 0.375rem; border: 1px solid var(--border-color); }
+    .roles-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .role-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .role-tag { padding: 0.2rem 0.6rem; background: #27272a; border: 1px solid var(--border-color); border-radius: 1rem; font-size: 0.75rem; color: var(--text-secondary); }
+    .role-tag.entry { border-color: var(--success); color: var(--success); background: rgba(34,197,94,0.05); }
+    .role-tag.mid { border-color: var(--warning); color: var(--warning); background: rgba(234,179,8,0.05); }
+    .role-tag.senior { border-color: #818cf8; color: #818cf8; background: rgba(129,140,248,0.05); }
+    .client-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .action-btn { padding: 0.375rem 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.25rem; color: var(--text-primary); font-size: 0.75rem; cursor: pointer; transition: all 0.2s; font-family: 'Rajdhani', sans-serif; font-weight: 600; }
+    .action-btn:hover { border-color: var(--imperial-gold); color: var(--imperial-gold); }
+    .action-btn.email-btn { border-color: var(--blue); color: #93c5fd; }
+    .action-btn.email-btn:hover { background: rgba(59,130,246,0.1); }
+    .action-btn.pipeline-btn { border-color: var(--success); color: var(--success); }
+    .action-btn.pipeline-btn:hover { background: rgba(34,197,94,0.1); }
+    .model-selector { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .model-btn { padding: 0.35rem 0.85rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; border: 1px solid; font-family: 'Rajdhani', sans-serif; transition: all 0.15s; background: transparent; }
+    .model-btn.contingency { border-color: var(--contingency); color: var(--contingency); }
+    .model-btn.contingency.active { background: rgba(34,197,94,0.2); }
+    .model-btn.retained { border-color: var(--retained); color: #93c5fd; }
+    .model-btn.retained.active { background: rgba(59,130,246,0.2); }
+    .model-btn.staffing { border-color: var(--warning); color: var(--warning); }
+    .model-btn.staffing.active { background: rgba(234,179,8,0.2); }
+    .model-btn.unknown { border-color: #52525b; color: #a1a1aa; }
+    .model-btn.unknown.active { background: rgba(82,82,91,0.3); }
+    .tab-row { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; flex-wrap: wrap; }
+    .loading { text-align: center; padding: 3rem; color: var(--text-secondary); }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--imperial-gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid; }
+    .alert-success { background: rgba(34,197,94,0.1); border-color: var(--success); color: #86efac; }
+    .alert-warning { background: rgba(234,179,8,0.1); border-color: var(--warning); color: #fde047; }
+    .alert-danger { background: rgba(239,68,68,0.1); border-color: var(--danger); color: #fca5a5; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal { background: #1c1c1f; border: 1px solid var(--imperial-gold); border-radius: 0.75rem; padding: 2rem; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--imperial-gold); margin-bottom: 1.25rem; letter-spacing: 1px; }
+    .email-field { margin-bottom: 1rem; }
+    .email-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 0.25rem; display: block; }
+    .email-input, .email-textarea { width: 100%; padding: 0.6rem 0.75rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-family: 'Rajdhani', sans-serif; font-size: 0.875rem; resize: vertical; }
+    .email-input:focus, .email-textarea:focus { outline: none; border-color: var(--imperial-gold); }
+    .email-textarea { min-height: 180px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; flex-wrap: wrap; }
+    .api-config { background: #18181b; border: 1px solid #422006; border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .token-input { width: 100%; padding: 0.5rem 0.75rem; background: #27272a; border: 1px solid var(--border-color); border-radius: 0.375rem; color: var(--text-primary); font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; }
+    .token-input:focus { outline: none; border-color: var(--imperial-gold); }
+    .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 700px) { .api-grid { grid-template-columns: 1fr; } }
+    .legend { display: flex; gap: 1.5rem; flex-wrap: wrap; padding: 0.75rem 1rem; background: #18181b; border-radius: 0.375rem; border: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .stage-select { padding: 0.25rem 0.5rem; background: #18181b; border: 1px solid var(--border-color); border-radius: 0.25rem; color: var(--text-primary); font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; cursor: pointer; }
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--success); color: #000; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; z-index: 300; animation: fadeInUp 0.3s ease; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .scan-info { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-content">
+    <div>
+      <h1 class="header-title">🎯 IMPERIO CLIENT HUNTER</h1>
+      <p class="header-subtitle">BD Intelligence Engine — MongoDB Atlas + Vercel</p>
+    </div>
+    <div class="header-right">
+      <div class="db-status">
+        <div class="db-dot" id="dbDot"></div>
+        <span id="dbStatus">Connecting...</span>
+      </div>
+      <a href="../imperio-command-center.html" class="back-btn">← Command Center</a>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ALERT -->
+  <div class="alert alert-success" id="mainAlert">
+    ✅ Connected to MongoDB Atlas — data persists across sessions and devices.
+  </div>
+
+  <!-- API CONFIG -->
+  <div class="api-config">
+    <div class="section-title" style="margin-bottom:0.75rem">⚙️ ClearanceJobs Auth (Optional)</div>
+    <div class="api-grid">
+      <div>
+        <label class="filter-label">X-CSRF-Token</label>
+        <input type="text" class="token-input" id="cjCsrf" placeholder="Paste CSRF token from DevTools..." />
+      </div>
+      <div>
+        <label class="filter-label">Cookie String</label>
+        <input type="password" class="token-input" id="cjCookie" placeholder="Paste full cookie string from DevTools..." />
+        <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:0.25rem">DevTools → Network → any CJ request → Headers → Cookie</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Client Leads</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--contingency)" id="statContingency">—</div><div class="stat-label">🟢 Contingency</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:#93c5fd" id="statRetained">—</div><div class="stat-label">🔵 Retained</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--warning)" id="statStaffing">—</div><div class="stat-label">🟡 Staffing</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:var(--imperial-gold)" id="statPipeline">—</div><div class="stat-label">In Pipeline</div></div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--contingency)"></div> Contingency — pay on hire</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--retained)"></div> Retained — paid upfront</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Staffing — contract/W2</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#52525b"></div> Unknown — pitch to discover</div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="section">
+    <div class="tab-row">
+      <button class="btn btn-primary" id="tabLeads" onclick="switchTab('leads')">🎯 Client Leads (<span id="leadsCount">0</span>)</button>
+      <button class="btn btn-secondary" id="tabPipeline" onclick="switchTab('pipeline')">📋 Pipeline (<span id="pipelineCount">0</span>)</button>
+      <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center">
+        <button class="btn btn-primary" id="huntBtn" onclick="runHunt()">🎯 Hunt Now</button>
+        <button class="btn btn-secondary" onclick="loadLeads()">🔄</button>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div id="progressArea" style="display:none;margin-bottom:1rem">
+      <div class="progress-wrap"><div class="progress-fill" id="progressBar" style="width:0%">0%</div></div>
+      <p class="scan-info" id="progressStatus">Initializing...</p>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <div class="filter-group">
+        <label class="filter-label">Model</label>
+        <select class="filter-select" id="filterModel" onchange="applyFilters()">
+          <option value="all">All Models</option>
+          <option value="contingency">🟢 Contingency</option>
+          <option value="retained">🔵 Retained</option>
+          <option value="staffing">🟡 Staffing</option>
+          <option value="unknown">⚪ Unknown</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Site</label>
+        <select class="filter-select" id="filterSite" onchange="applyFilters()">
+          <option value="all">All Sites</option>
+          <option value="builtin">Built In</option>
+          <option value="clearance">ClearanceJobs</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Role Level</label>
+        <select class="filter-select" id="filterLevel" onchange="applyFilters()">
+          <option value="all">All Levels</option>
+          <option value="entry">Entry / Jr</option>
+          <option value="mid">Mid Level</option>
+          <option value="senior">Senior</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input type="text" class="filter-input" id="filterSearch" placeholder="Company or role..." oninput="applyFilters()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADS TAB -->
+  <div id="leadsTab" class="section">
+    <h2 class="section-title">Client Leads (<span id="leadsListCount">0</span>)</h2>
+    <div id="leadsList">
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <h3>No Client Leads Yet</h3>
+        <p>Click Hunt Now to start finding companies actively hiring in your candidate categories</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div id="pipelineTab" class="section" style="display:none">
+    <h2 class="section-title">Outreach Pipeline (<span id="pipelineListCount">0</span>)</h2>
+    <div id="pipelineList">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No Clients in Pipeline Yet</h3>
+        <p>Add leads from the Client Leads tab</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="modal-overlay" id="emailModal" style="display:none" onclick="if(event.target===this)closeEmailModal()">
+  <div class="modal">
+    <div class="modal-title">✉️ OUTREACH EMAIL — <span id="emailModalCompany"></span></div>
+    <div class="email-field">
+      <label class="email-label">To</label>
+      <input class="email-input" id="emailTo" placeholder="hiring@company.com" />
+    </div>
+    <div class="email-field">
+      <label class="email-label">Subject</label>
+      <input class="email-input" id="emailSubject" />
+    </div>
+    <div class="email-field">
+      <label class="email-label">Body</label>
+      <textarea class="email-textarea" id="emailBody" rows="12"></textarea>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem">Regenerate for model:</div>
+      <div class="model-selector">
+        <button class="model-btn contingency" onclick="regenEmail('contingency')">🟢 Contingency</button>
+        <button class="model-btn retained" onclick="regenEmail('retained')">🔵 Retained</button>
+        <button class="model-btn staffing" onclick="regenEmail('staffing')">🟡 Staffing</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEmailModal()">Cancel</button>
+      <button class="btn btn-secondary" onclick="copyEmail()">📋 Copy</button>
+      <button class="btn btn-primary" onclick="openInMail()">📧 Open in Mail</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+  // ── CONFIG ─────────────────────────────────────────────────────────────────
+  // Replace this with your actual Vercel deployment URL after deploying
+  const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : window.location.origin;
+
+  // ── STATE ──────────────────────────────────────────────────────────────────
+  let allLeads = [];
+  let filteredLeads = [];
+  let pipelineEntries = [];
+  let currentTab = 'leads';
+  let emailModalClient = null;
+  let isHunting = false;
+
+  // ── INIT ───────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    loadSavedAuth();
+    await Promise.all([loadLeads(), loadPipeline()]);
+    checkDbStatus();
+  });
+
+  function loadSavedAuth() {
+    const csrf = localStorage.getItem('cj_csrf');
+    const cookie = localStorage.getItem('cj_cookie');
+    if (csrf) document.getElementById('cjCsrf').value = csrf;
+    if (cookie) document.getElementById('cjCookie').value = cookie;
+
+    // Save on change
+    document.getElementById('cjCsrf').addEventListener('change', e => localStorage.setItem('cj_csrf', e.target.value));
+    document.getElementById('cjCookie').addEventListener('change', e => localStorage.setItem('cj_cookie', e.target.value));
+  }
+
+  async function checkDbStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/api/leads?limit=1`);
+      const dot = document.getElementById('dbDot');
+      const status = document.getElementById('dbStatus');
+      if (res.ok) {
+        dot.className = 'db-dot';
+        status.textContent = 'MongoDB Connected';
+      } else {
+        dot.className = 'db-dot offline';
+        status.textContent = 'DB Error';
+      }
+    } catch {
+      document.getElementById('dbDot').className = 'db-dot offline';
+      document.getElementById('dbStatus').textContent = 'Offline';
+    }
+  }
+
+  // ── LOAD LEADS ─────────────────────────────────────────────────────────────
+  async function loadLeads() {
+    try {
+      const params = new URLSearchParams({
+        model: document.getElementById('filterModel')?.value || 'all',
+        site: document.getElementById('filterSite')?.value || 'all',
+        level: document.getElementById('filterLevel')?.value || 'all',
+        search: document.getElementById('filterSearch')?.value || '',
+        limit: 200,
+      });
+      const res = await fetch(`${API_BASE}/api/leads?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        allLeads = data.leads;
+        filteredLeads = allLeads;
+        renderLeads();
+        updateStats();
+      }
+    } catch (e) {
+      showAlert(`Failed to load leads: ${e.message}`, 'danger');
+    }
+  }
+
+  async function loadPipeline() {
+    try {
+      const res = await fetch(`${API_BASE}/api/pipeline`);
+      const data = await res.json();
+      if (data.success) {
+        pipelineEntries = data.pipeline;
+        renderPipeline();
+        document.getElementById('pipelineCount').textContent = pipelineEntries.length;
+        document.getElementById('statPipeline').textContent = pipelineEntries.length;
+      }
+    } catch (e) {
+      console.error('Pipeline load error:', e);
+    }
+  }
+
+  // ── HUNT ───────────────────────────────────────────────────────────────────
+  async function runHunt() {
+    if (isHunting) return;
+    isHunting = true;
+
+    const huntBtn = document.getElementById('huntBtn');
+    huntBtn.disabled = true;
+    huntBtn.textContent = '⏳ Hunting...';
+
+    const progressArea = document.getElementById('progressArea');
+    const progressBar = document.getElementById('progressBar');
+    const progressStatus = document.getElementById('progressStatus');
+
+    progressArea.style.display = 'block';
+    progressBar.style.width = '10%';
+    progressBar.textContent = '10%';
+    progressStatus.textContent = 'Sending hunt request to server...';
+
+    try {
+      const cjCsrf = document.getElementById('cjCsrf').value;
+      const cjCookie = document.getElementById('cjCookie').value;
+
+      // Animate progress while waiting
+      let pct = 10;
+      const timer = setInterval(() => {
+        pct = Math.min(pct + 2, 85);
+        progressBar.style.width = pct + '%';
+        progressBar.textContent = pct + '%';
+        if (pct < 30) progressStatus.textContent = 'Fetching Built In jobs...';
+        else if (pct < 60) progressStatus.textContent = 'Fetching ClearanceJobs...';
+        else progressStatus.textContent = 'Aggregating companies & saving to MongoDB...';
+      }, 800);
+
+      const res = await fetch(`${API_BASE}/api/hunt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cjCsrf, cjCookie }),
+      });
+
+      clearInterval(timer);
+      const data = await res.json();
+
+      progressBar.style.width = '100%';
+      progressBar.textContent = '100%';
+
+      if (data.success) {
+        progressStatus.textContent = `✓ Done! ${data.totalLeads} leads from ${data.totalJobs} jobs. Built In: ${data.builtInCount} | ClearanceJobs: ${data.clearanceCount}`;
+        showAlert(`✅ Hunt complete — ${data.totalLeads} client leads saved to MongoDB.`, 'success');
+        await loadLeads();
+      } else {
+        progressStatus.textContent = data.message || 'Hunt failed — check errors';
+        showAlert(`⚠️ ${data.message || 'Hunt failed'}`, 'warning');
+      }
+
+      if (data.errors?.length) {
+        console.warn('Hunt errors:', data.errors);
+      }
+
+    } catch (e) {
+      showAlert(`Hunt error: ${e.message}`, 'danger');
+      document.getElementById('progressStatus').textContent = `Error: ${e.message}`;
+    }
+
+    setTimeout(() => {
+      document.getElementById('progressArea').style.display = 'none';
+    }, 8000);
+
+    huntBtn.disabled = false;
+    huntBtn.textContent = '🎯 Hunt Now';
+    isHunting = false;
+  }
+
+  // ── FILTERS ────────────────────────────────────────────────────────────────
+  function applyFilters() {
+    const model = document.getElementById('filterModel').value;
+    const site = document.getElementById('filterSite').value;
+    const level = document.getElementById('filterLevel').value;
+    const search = document.getElementById('filterSearch').value.toLowerCase();
+
+    filteredLeads = allLeads.filter(c => {
+      if (model !== 'all' && c.placementModel !== model) return false;
+      if (site !== 'all' && c.site !== site) return false;
+      if (level === 'entry' && !c.entryCount) return false;
+      if (level === 'mid' && !c.midCount) return false;
+      if (level === 'senior' && !c.seniorCount) return false;
+      if (search) {
+        const nameMatch = c.name.toLowerCase().includes(search);
+        const roleMatch = (c.openRoles || []).some(r => r.title.toLowerCase().includes(search));
+        if (!nameMatch && !roleMatch) return false;
+      }
+      return true;
+    });
+
+    renderLeads();
+  }
+
+  // ── RENDER LEADS ───────────────────────────────────────────────────────────
+  function renderLeads() {
+    const container = document.getElementById('leadsList');
+    document.getElementById('leadsCount').textContent = filteredLeads.length;
+    document.getElementById('leadsListCount').textContent = filteredLeads.length;
+
+    if (!filteredLeads.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><h3>No Leads Found</h3><p>Try adjusting filters or run a new hunt</p></div>`;
+      return;
+    }
+
+    const modelLabel = { contingency: '🟢 Contingency', retained: '🔵 Retained', staffing: '🟡 Staffing', unknown: '⚪ Unknown' };
+    const modelBadge = { contingency: 'badge-contingency', retained: 'badge-retained', staffing: 'badge-staffing', unknown: 'badge-unknown' };
+
+    container.innerHTML = filteredLeads.map(c => {
+      const id = c._id;
+      const daysAgo = c.mostRecentPost
+        ? Math.floor((new Date() - new Date(c.mostRecentPost)) / 86400000)
+        : null;
+
+      return `
+      <div class="client-card ${c.placementModel !== 'unknown' ? c.placementModel : ''}" id="card-${id}">
+        <div class="client-header">
+          <div>
+            <div class="client-name">${c.name}</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary)">${c.domain || ''} · via ${c.site === 'builtin' ? 'Built In' : 'ClearanceJobs'}</div>
+          </div>
+          <div class="client-badges">
+            <span class="badge ${modelBadge[c.placementModel] || 'badge-unknown'}">${modelLabel[c.placementModel] || '⚪ Unknown'}</span>
+            <span class="badge badge-score">⚡ ${c.score || 0}pts</span>
+            ${c.addedToPipeline ? '<span class="badge badge-pipeline">IN PIPELINE</span>' : ''}
+          </div>
+        </div>
+
+        <div class="client-meta">
+          <div class="meta-item"><span class="meta-label">Total Roles</span><span class="meta-value" style="color:var(--imperial-gold)">${c.totalPostings}</span></div>
+          <div class="meta-item"><span class="meta-label">Entry/Jr</span><span class="meta-value" style="color:var(--success)">${c.entryCount}</span></div>
+          <div class="meta-item"><span class="meta-label">Mid Level</span><span class="meta-value" style="color:var(--warning)">${c.midCount}</span></div>
+          <div class="meta-item"><span class="meta-label">Senior</span><span class="meta-value" style="color:#818cf8">${c.seniorCount}</span></div>
+          <div class="meta-item"><span class="meta-label">Last Posted</span><span class="meta-value">${daysAgo !== null ? daysAgo + 'd ago' : 'N/A'}</span></div>
+          <div class="meta-item"><span class="meta-label">Contact</span><span class="meta-value" style="font-size:0.8rem">${c.contactName || 'Hiring Team'}</span></div>
+        </div>
+
+        <div class="roles-list">
+          <div class="roles-title">Open Roles</div>
+          <div class="role-tags">
+            ${(c.openRoles || []).map(r => `<span class="role-tag ${r.level}">${r.title}</span>`).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:0.75rem">
+          <div style="font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem">Set Placement Model:</div>
+          <div class="model-selector">
+            ${['contingency','retained','staffing','unknown'].map(m => `
+              <button class="model-btn ${m} ${c.placementModel === m ? 'active' : ''}"
+                onclick="updateModel('${id}', '${m}')">
+                ${m === 'contingency' ? '🟢 Contingency' : m === 'retained' ? '🔵 Retained' : m === 'staffing' ? '🟡 Staffing' : '⚪ Unknown'}
+              </button>`).join('')}
+          </div>
+        </div>
+
+        <div class="client-actions">
+          <button class="action-btn email-btn" onclick="openEmailModal(${JSON.stringify(c).replace(/"/g, '&quot;')})">✉️ Email</button>
+          ${!c.addedToPipeline
+            ? `<button class="action-btn pipeline-btn" onclick="addToPipeline('${id}')">+ Pipeline</button>`
+            : `<button class="action-btn" style="color:var(--text-secondary)" onclick="removeFromPipeline('${id}')">✓ In Pipeline</button>`
+          }
+          <button class="action-btn" onclick="window.open('https://www.linkedin.com/company/${encodeURIComponent(c.name.toLowerCase().replace(/\s+/g,'-'))}','_blank')">LinkedIn →</button>
+          ${c.domain ? `<button class="action-btn" onclick="window.open('https://${c.domain}','_blank')">Website →</button>` : ''}
+          <button class="action-btn" style="color:var(--danger)" onclick="deleteLead('${id}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── RENDER PIPELINE ────────────────────────────────────────────────────────
+  function renderPipeline() {
+    const container = document.getElementById('pipelineList');
+    document.getElementById('pipelineListCount').textContent = pipelineEntries.length;
+
+    if (!pipelineEntries.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><h3>Pipeline Empty</h3><p>Add leads from the Client Leads tab</p></div>`;
+      return;
+    }
+
+    const stages = ['New Lead', 'Contacted', 'In Conversation', 'Proposal Sent', 'Closed Won', 'Closed Lost'];
+    const modelBadge = { contingency: 'badge-contingency', retained: 'badge-retained', staffing: 'badge-staffing', unknown: 'badge-unknown' };
+    const modelLabel = { contingency: '🟢 Contingency', retained: '🔵 Retained', staffing: '🟡 Staffing', unknown: '⚪ Unknown' };
+
+    container.innerHTML = pipelineEntries.map(entry => `
+      <div class="client-card ${entry.placementModel !== 'unknown' ? entry.placementModel : ''}">
+        <div class="client-header">
+          <div>
+            <div class="client-name">${entry.name}</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary)">Added ${new Date(entry.addedAt).toLocaleDateString()}</div>
+          </div>
+          <div class="client-badges">
+            <span class="badge ${modelBadge[entry.placementModel] || 'badge-unknown'}">${modelLabel[entry.placementModel] || '⚪ Unknown'}</span>
+            <span style="padding:0.2rem 0.6rem;border-radius:0.25rem;font-size:0.7rem;background:rgba(197,161,48,0.15);color:var(--imperial-gold);border:1px solid var(--imperial-gold);font-weight:700">${entry.stage}</span>
+          </div>
+        </div>
+        <div class="client-meta">
+          <div class="meta-item"><span class="meta-label">Contact</span><span class="meta-value">${entry.contactName || 'Hiring Team'}</span></div>
+          <div class="meta-item"><span class="meta-label">Email</span><span class="meta-value" style="font-size:0.8rem">${entry.contactEmail || 'Not found'}</span></div>
+          <div class="meta-item"><span class="meta-label">Open Roles</span><span class="meta-value" style="color:var(--imperial-gold)">${entry.totalPostings}</span></div>
+          <div class="meta-item">
+            <span class="meta-label">Stage</span>
+            <select class="stage-select" onchange="updateStage('${entry._id}', this.value)">
+              ${stages.map(s => `<option ${s === entry.stage ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="client-actions">
+          <button class="action-btn email-btn" onclick="openEmailModal(${JSON.stringify(entry).replace(/"/g, '&quot;')})">✉️ Email</button>
+          <button class="action-btn" style="color:var(--danger)" onclick="removePipelineEntry('${entry._id}', '${entry.leadId}')">Remove</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── STATS ──────────────────────────────────────────────────────────────────
+  function updateStats() {
+    document.getElementById('statTotal').textContent = allLeads.length;
+    document.getElementById('statContingency').textContent = allLeads.filter(c => c.placementModel === 'contingency').length;
+    document.getElementById('statRetained').textContent = allLeads.filter(c => c.placementModel === 'retained').length;
+    document.getElementById('statStaffing').textContent = allLeads.filter(c => c.placementModel === 'staffing').length;
+    document.getElementById('leadsCount').textContent = allLeads.length;
+  }
+
+  // ── ACTIONS ────────────────────────────────────────────────────────────────
+  async function updateModel(id, model) {
+    try {
+      await fetch(`${API_BASE}/api/leads`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, placementModel: model }),
+      });
+      const lead = allLeads.find(c => c._id === id);
+      if (lead) lead.placementModel = model;
+      renderLeads();
+      updateStats();
+      showToast('Model updated ✓');
+    } catch (e) { showToast('Update failed: ' + e.message); }
+  }
+
+  async function addToPipeline(leadId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/pipeline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const lead = allLeads.find(c => c._id === leadId);
+        if (lead) lead.addedToPipeline = true;
+        await loadPipeline();
+        renderLeads();
+        showToast('Added to pipeline ✓');
+      }
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  async function removePipelineEntry(id, leadId) {
+    try {
+      await fetch(`${API_BASE}/api/pipeline`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, leadId }),
+      });
+      const lead = allLeads.find(c => c._id === leadId);
+      if (lead) lead.addedToPipeline = false;
+      await loadPipeline();
+      renderLeads();
+      showToast('Removed from pipeline');
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  async function updateStage(id, stage) {
+    try {
+      await fetch(`${API_BASE}/api/pipeline`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, stage }),
+      });
+      showToast('Stage updated ✓');
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  async function deleteLead(id) {
+    if (!confirm('Remove this lead?')) return;
+    try {
+      await fetch(`${API_BASE}/api/leads`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      allLeads = allLeads.filter(c => c._id !== id);
+      filteredLeads = filteredLeads.filter(c => c._id !== id);
+      renderLeads();
+      updateStats();
+    } catch (e) { showToast('Error: ' + e.message); }
+  }
+
+  // ── EMAIL ──────────────────────────────────────────────────────────────────
+  function generateEmail(client, model) {
+    const name = client.contactName || 'Hiring Team';
+    const greeting = client.contactName ? `Hi ${name.split(' ')[0]},` : 'Hello Hiring Team,';
+    const roles = (client.openRoles || []).slice(0, 3).map(r => r.title).join(', ');
+    const modelLine = {
+      contingency: 'We operate on a contingency basis — you pay only when we successfully place a candidate.',
+      retained: 'We offer retained search engagements — a vetted slate delivered fast, flat-fee pricing, no surprises.',
+      staffing: 'We provide contract and W2 staffing solutions — qualified candidates on your timeline, fully compliant.',
+      unknown: 'We offer contingency, retained, and staffing solutions depending on your current hiring structure.',
+    }[model] || '';
+
+    return `${greeting}
+
+My name is Kelz, Founder of Imperio Talent Solutions — a Service-Disabled Veteran-Owned Small Business (SDVOSB) specializing in placing vetted, mission-ready talent.
+
+I noticed ${client.name} is actively hiring for ${roles}${client.totalPostings > 1 ? ` and ${client.totalPostings - 1} other role${client.totalPostings > 2 ? 's' : ''}` : ''}. We have pre-screened candidates from our pipeline — graduates of Vschool, VetSec/Level Effect, Sales Platoon, and Fort Hood TAP — ready to interview now.
+
+${modelLine}
+
+If you're open to a 10-minute call this week, I'd like to show you what we have. No obligation.
+
+V/R,
+Anthony "Kelz" Kelley
+Founder — Imperio Talent Solutions
+SDVOSB | VetHUB Certified
+(254) 265-9335 | anthony@imperiovita.co | www.imperiovita.co`;
+  }
+
+  function openEmailModal(client) {
+    emailModalClient = client;
+    document.getElementById('emailModalCompany').textContent = client.name;
+    document.getElementById('emailTo').value = client.contactEmail || '';
+    document.getElementById('emailSubject').value = `Talent Partnership — ${client.name} | Imperio Talent Solutions (SDVOSB)`;
+    document.getElementById('emailBody').value = generateEmail(client, client.placementModel || 'unknown');
+    document.getElementById('emailModal').style.display = 'flex';
+  }
+
+  function closeEmailModal() {
+    document.getElementById('emailModal').style.display = 'none';
+    emailModalClient = null;
+  }
+
+  function regenEmail(model) {
+    if (!emailModalClient) return;
+    document.getElementById('emailBody').value = generateEmail(emailModalClient, model);
+  }
+
+  function copyEmail() {
+    const to = document.getElementById('emailTo').value;
+    const subject = document.getElementById('emailSubject').value;
+    const body = document.getElementById('emailBody').value;
+    navigator.clipboard.writeText(`To: ${to}\nSubject: ${subject}\n\n${body}`).then(() => showToast('Copied ✓'));
+  }
+
+  function openInMail() {
+    const to = document.getElementById('emailTo').value;
+    const subject = document.getElementById('emailSubject').value;
+    const body = document.getElementById('emailBody').value;
+    window.open(`mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  }
+
+  // ── UI HELPERS ─────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('leadsTab').style.display = tab === 'leads' ? 'block' : 'none';
+    document.getElementById('pipelineTab').style.display = tab === 'pipeline' ? 'block' : 'none';
+    document.getElementById('tabLeads').className = `btn ${tab === 'leads' ? 'btn-primary' : 'btn-secondary'}`;
+    document.getElementById('tabPipeline').className = `btn ${tab === 'pipeline' ? 'btn-primary' : 'btn-secondary'}`;
+  }
+
+  function showAlert(msg, type = 'success') {
+    const el = document.getElementById('mainAlert');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2500);
+  }
+</script>
+</body>
+</html>

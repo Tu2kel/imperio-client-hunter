@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IMPERIO V4 - DEEP INTEL</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #020617; color: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .military-card { background: #0f172a; border: 1px solid #1e293b; border-left: 4px solid #3b82f6; }
+        .action-btn { background: #1e293b; border: 1px solid #334155; transition: all 0.2s; }
+        .action-btn:hover { background: #3b82f6; color: white; border-color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [inputText, setInputText] = useState("");
+            const [leads, setLeads] = useState([]);
+
+            const processBatch = () => {
+                const rawBlocks = inputText.split(/(?=Posted\s\d+|Company:)/g);
+                const newLeads = rawBlocks.map(block => {
+                    const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    if (lines.length < 2) return null;
+
+                    let company = lines.find(l => l.toLowerCase().startsWith("company:"))?.split(":")[1]?.trim() || lines[1] || "Unknown";
+                    let title = lines.find(l => l.toLowerCase().includes("job title:"))?.split(":")[1]?.trim() || lines[0] || "Unknown";
+                    
+                    return { id: Math.random(), company, title };
+                }).filter(Boolean);
+
+                setLeads([...newLeads, ...leads]);
+                setInputText("");
+            };
+
+            // ADVANCED SEARCH LOGIC
+            const getDeepIntel = (company, type) => {
+                let query = "";
+                if (type === 'manager') {
+                    // Finds Program Managers or Directors in charge of that specific role
+                    query = `site:zoominfo.com OR site:rocketreach.co "${company}" "Program Manager" OR "Director of Operations"`;
+                } else if (type === 'contact') {
+                    // Looks for actual @company.com emails or phone lists in PDF/XLS formats
+                    query = `"${company}" email OR contact OR "staff directory" filetype:pdf OR filetype:xlsx`;
+                }
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto p-10">
+                    <h1 className="text-4xl font-black text-blue-500 mb-2">IMPERIO <span className="text-white text-2xl font-light">DEEP INTEL</span></h1>
+                    <p className="text-slate-500 mb-8 font-mono text-xs uppercase tracking-widest">Targeting: Cleared Tech & GovCon Ops</p>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div className="lg:col-span-4">
+                            <textarea 
+                                className="w-full h-80 bg-slate-950 border border-slate-800 rounded-lg p-4 font-mono text-sm mb-4 outline-none focus:border-blue-500"
+                                placeholder="Paste Job List Here..."
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                            />
+                            <button onClick={processBatch} className="w-full bg-blue-600 hover:bg-blue-500 py-4 font-black uppercase rounded-lg shadow-xl">Capture & Script</button>
+                        </div>
+
+                        <div className="lg:col-span-8 space-y-4">
+                            {leads.map(lead => (
+                                <div key={lead.id} className="military-card p-6 rounded-r-xl">
+                                    <h3 className="text-xl font-bold">{lead.title}</h3>
+                                    <p className="text-blue-400 font-bold mb-4 uppercase tracking-tighter text-sm">{lead.company}</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button onClick={() => getDeepIntel(lead.company, 'manager')} className="action-btn text-[10px] font-bold py-3 rounded uppercase">
+                                            Extract Decision Makers
+                                        </button>
+                                        <button onClick={() => getDeepIntel(lead.company, 'contact')} className="action-btn text-[10px] font-bold py-3 rounded uppercase">
+                                            Pull Contact Sheets (PDF/XLS)
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

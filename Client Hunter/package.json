@@ -1,0 +1,17 @@
+{
+  "name": "imperio-client-hunter",
+  "version": "1.0.0",
+  "description": "Imperio Client Hunter - BD Intelligence Engine",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "mongodb": "^6.3.0",
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
