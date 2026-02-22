@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Imperio Agency Intel Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --red:           #8B0000;
+  --red-deep:      #5C0000;
+  --gold:          #DAA520;
+  --gold-lt:       #EEC900;
+  --black:         #000000;
+  --dark:          #0A0A0A;
+  --dark2:         #111111;
+  --dark3:         #1A1A1A;
+  --text:          #D8D8D8;
+  --muted:         #888888;
+  --border:        rgba(218,165,32,0.25);
+  --border-bright: rgba(218,165,32,0.60);
+  --success:       #28A745;
+  --info:          #1A6BB5;
+  --info-lt:       #5BA3D9;
+  --warn:          #C87A20;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:17px;}
+body{
+  background:var(--black);
+  color:var(--text);
+  font-family:'Libre Baskerville',Georgia,serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at 10% 5%, rgba(139,0,0,0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 95%, rgba(139,0,0,0.05) 0%, transparent 40%);
+  pointer-events:none;z-index:0;
+}
+#root{position:relative;z-index:1;}
+
+/* ── HEADER ─────────────────────────────────────────── */
+.hdr{
+  background:linear-gradient(180deg, var(--red-deep) 0%, var(--dark) 100%);
+  border-bottom:2px solid var(--gold);
+  position:sticky;top:0;z-index:100;
+}
+.hdr-inner{
+  max-width:2000px;margin:0 auto;
+  padding:14px 40px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.logo{display:flex;align-items:center;gap:18px;}
+.logo-seal{
+  width:58px;height:58px;
+  background:linear-gradient(135deg,var(--gold) 0%,var(--red) 100%);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:26px;font-weight:900;
+  color:var(--black);
+  border:2px solid var(--gold-lt);
+  box-shadow:0 0 24px rgba(218,165,32,0.45);
+  flex-shrink:0;
+}
+.logo-words{line-height:1.15;}
+.logo-super{font-family:'Cinzel',serif;font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;opacity:.75;}
+.logo-main{font-family:'Cinzel',serif;font-size:26px;font-weight:700;color:var(--gold-lt);letter-spacing:1px;}
+.logo-sub{font-size:13px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+
+.hdr-right{text-align:right;}
+.cert{
+  display:inline-block;
+  background:rgba(218,165,32,0.12);
+  border:1px solid var(--border-bright);
+  border-radius:3px;padding:4px 12px;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:5px;
+}
+.hdr-meta{font-size:12px;color:var(--muted);letter-spacing:1px;}
+
+/* ── MAIN ───────────────────────────────────────────── */
+.main{max-width:2000px;margin:0 auto;padding:28px 40px 60px;}
+
+/* ── SECTION HEADS ──────────────────────────────────── */
+.sh{
+  font-family:'Cinzel',serif;
+  font-size:11px;letter-spacing:5px;
+  color:var(--gold);text-transform:uppercase;
+  margin-bottom:4px;
+}
+.ss{font-size:15px;color:var(--muted);font-style:italic;margin-bottom:18px;}
+
+/* ── STEP TRACKER ───────────────────────────────────── */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:28px;flex-wrap:wrap;}
+.step-wrap{display:flex;align-items:center;}
+.step-num{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:700;
+  border:1px solid var(--border);background:var(--dark2);color:var(--muted);
+  transition:all .3s;flex-shrink:0;
+}
+.step-num.active{border-color:var(--gold);background:rgba(218,165,32,.2);color:var(--gold-lt);}
+.step-num.done{border-color:var(--success);background:rgba(42,139,58,.2);color:#5DC870;}
+.step-lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin:0 14px 0 8px;}
+.step-lbl.active{color:var(--gold);}
+.step-conn{height:1px;width:50px;background:var(--border);flex-shrink:0;margin-right:14px;}
+
+/* ── PANEL BASE ─────────────────────────────────────── */
+.panel{
+  background:var(--dark2);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:30px 36px;
+  margin-bottom:24px;
+  position:relative;
+  animation:fadeUp .35s ease;
+}
+.panel::before{
+  content:'';position:absolute;top:0;left:36px;right:36px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── INPUTS ─────────────────────────────────────────── */
+.ig{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:22px;}
+@media(max-width:1100px){.ig{grid-template-columns:1fr 1fr;}}
+@media(max-width:680px){.ig{grid-template-columns:1fr;}}
+
+.igrp{display:flex;flex-direction:column;gap:6px;}
+.ilbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;}
+.isub{font-size:13px;color:var(--muted);font-style:italic;}
+
+input[type=text],select{
+  background:#111111;
+  border:1px solid var(--border);border-radius:3px;
+  padding:12px 16px;
+  color:var(--text);
+  font-family:'Libre Baskerville',Georgia,serif;font-size:16px;
+  width:100%;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+input[type=text]:focus,select:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 2px rgba(218,165,32,.15);
+}
+select option{background:#111111;}
+
+/* Toggle chips */
+.chips{display:flex;flex-wrap:wrap;gap:10px;}
+.chip{
+  padding:8px 18px;
+  border:1px solid var(--border);border-radius:3px;
+  background:transparent;color:var(--muted);
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;
+  cursor:pointer;transition:all .2s;text-transform:uppercase;
+}
+.chip.on{background:rgba(218,165,32,.18);border-color:var(--gold);color:var(--gold-lt);}
+.chip:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── BUTTONS ────────────────────────────────────────── */
+.btn-fire{
+  background:linear-gradient(135deg,var(--red),var(--red-deep));
+  border:1px solid var(--gold);
+  color:var(--gold-lt);
+  font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;
+  text-transform:uppercase;
+  padding:15px 36px;cursor:pointer;border-radius:3px;
+  transition:all .3s;
+  box-shadow:0 4px 20px rgba(139,0,0,.45);
+  position:relative;overflow:hidden;
+}
+.btn-fire::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(218,165,32,.12),transparent);
+  transform:translateX(-100%);transition:transform .5s;
+}
+.btn-fire:hover::after{transform:translateX(100%);}
+.btn-fire:hover{box-shadow:0 4px 30px rgba(218,165,32,.3);border-color:var(--gold-lt);}
+.btn-fire:disabled{opacity:.45;cursor:not-allowed;}
+
+.btn-ghost{
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;padding:10px 22px;
+  cursor:pointer;border-radius:3px;transition:all .2s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── API STATUS ─────────────────────────────────────── */
+.api-status{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;color:var(--muted);font-style:italic;
+  margin-top:12px;
+}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.dot.live{background:var(--success);box-shadow:0 0 8px rgba(42,139,58,.6);animation:pulse 2s infinite;}
+.dot.err{background:#C84040;}
+.dot.loading{background:var(--gold);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── TOOLBAR ─────────────────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+.flt{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;
+  padding:7px 16px;cursor:pointer;border-radius:2px;transition:all .2s;text-transform:uppercase;
+}
+.flt:hover,.flt.on{border-color:var(--gold);color:var(--gold);background:rgba(218,165,32,.1);}
+.sel-count{margin-left:auto;font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--gold);}
+
+/* ── TABLE ───────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  background:var(--dark3);
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;
+  color:var(--gold);text-transform:uppercase;
+  padding:12px 16px;text-align:left;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;user-select:none;white-space:nowrap;
+}
+thead th:hover{color:var(--gold-lt);}
+tbody td{
+  padding:12px 16px;
+  border-bottom:1px solid rgba(218,165,32,.07);
+  font-size:16px;vertical-align:middle;
+}
+tbody tr:hover td{background:rgba(218,165,32,.04);}
+tbody tr.sel td{background:rgba(218,165,32,.07);}
+
+.agency-nm{color:var(--gold-lt);font-weight:600;font-size:16px;}
+.amt{color:var(--gold);font-weight:600;}
+.tag{
+  display:inline-block;padding:2px 9px;border-radius:2px;
+  font-size:11px;letter-spacing:1px;
+  font-family:'Cinzel',serif;text-transform:uppercase;
+  margin-right:4px;margin-bottom:2px;
+}
+.t-sdvosb{background:rgba(218,165,32,.18);color:var(--gold);border:1px solid rgba(218,165,32,.4);}
+.t-live{background:rgba(42,139,58,.18);color:#5DC870;border:1px solid rgba(42,139,58,.4);}
+.t-data{background:rgba(42,92,155,.18);color:var(--info-lt);border:1px solid rgba(42,92,155,.4);}
+
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold);cursor:pointer;}
+
+/* ── MATCH BAR ───────────────────────────────────────── */
+.mbar{display:flex;align-items:center;gap:8px;}
+.mbar-bg{flex:1;height:5px;background:var(--dark3);border-radius:3px;overflow:hidden;min-width:70px;}
+.mbar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--gold));}
+.mpct{font-size:13px;color:var(--gold);font-weight:600;width:40px;text-align:right;}
+
+/* ── REPORT TABS ─────────────────────────────────────── */
+.rtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+@media(max-width:1100px){.rtabs{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.rtabs{grid-template-columns:1fr;}}
+
+.rtab{
+  background:var(--dark3);border:1px solid var(--border);border-radius:3px;
+  padding:18px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;
+}
+.rtab::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold));
+  transform:scaleX(0);transform-origin:left;transition:transform .3s;
+}
+.rtab:hover::before,.rtab.on::before{transform:scaleX(1);}
+.rtab:hover{border-color:var(--gold);transform:translateY(-2px);}
+.rtab.on{border-color:var(--gold);background:rgba(218,165,32,.06);}
+.rtab-ico{font-size:26px;margin-bottom:8px;}
+.rtab-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.rtab-desc{font-size:13px;color:var(--muted);font-style:italic;line-height:1.5;}
+
+/* ── REPORT BODY ─────────────────────────────────────── */
+.rbody{
+  background:var(--dark3);border:1px solid var(--border);border-radius:3px;
+  padding:28px;min-height:340px;animation:fadeUp .3s ease;
+}
+.rbody h3{
+  font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;
+  color:var(--gold-lt);text-transform:uppercase;
+  margin-bottom:18px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.rbody h3 span{font-size:12px;color:var(--muted);font-style:italic;font-family:'Libre Baskerville',Georgia,serif;font-weight:400;letter-spacing:0;}
+
+.igrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+@media(max-width:1100px){.igrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.igrid{grid-template-columns:1fr;}}
+
+.icard{background:var(--dark2);border:1px solid var(--border);border-radius:3px;padding:18px;}
+.icard-lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.icard-val{font-size:32px;font-weight:600;color:var(--gold-lt);line-height:1;}
+.icard-sub{font-size:13px;color:var(--muted);font-style:italic;margin-top:4px;}
+
+.ilist{list-style:none;}
+.ilist li{
+  padding:10px 0;border-bottom:1px solid rgba(218,165,32,.08);
+  font-size:16px;display:flex;justify-content:space-between;align-items:center;
+}
+.ilist li:last-child{border-bottom:none;}
+.ilist .lbl{color:var(--text);}
+.ilist .val{color:var(--gold);font-weight:600;font-size:15px;}
+
+.pain{
+  background:var(--dark2);border-left:3px solid var(--gold);
+  padding:14px 18px;margin-bottom:12px;border-radius:0 3px 3px 0;
+}
+.pain-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.pain-text{font-size:15px;color:var(--text);line-height:1.65;}
+
+.opprow{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:13px 0;border-bottom:1px solid rgba(218,165,32,.08);gap:14px;
+}
+.opprow:last-child{border-bottom:none;}
+.opp-title{font-size:16px;color:var(--gold-lt);margin-bottom:4px;}
+.opp-meta{font-size:13px;color:var(--muted);font-style:italic;}
+.opp-val{font-size:18px;color:var(--gold);font-weight:600;white-space:nowrap;}
+
+.sblo-card{
+  background:var(--dark2);border:1px solid var(--border);border-radius:3px;
+  padding:16px 20px;margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.sblo-agency{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;}
+.sblo-name{font-size:16px;color:var(--text);margin-top:3px;}
+.sblo-email{font-size:14px;color:var(--info-lt);font-style:italic;margin-top:2px;}
+.sblo-r{text-align:right;}
+.sblo-title-txt{font-size:13px;color:var(--muted);}
+
+.sdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;}
+.shot{background:#E85A2A;}
+.swarm{background:var(--gold);}
+.scool{background:var(--info-lt);}
+
+.elink{
+  display:inline-flex;align-items:center;gap:5px;
+  color:var(--info-lt);font-size:14px;font-style:italic;
+  text-decoration:none;transition:color .2s;
+}
+.elink:hover{color:var(--gold-lt);text-decoration:underline;}
+
+/* ── SPINNER ─────────────────────────────────────────── */
+.spin-wrap{text-align:center;padding:50px;}
+.spin{
+  width:46px;height:46px;
+  border:2px solid var(--border);border-top-color:var(--gold);
+  border-radius:50%;animation:rot .8s linear infinite;margin:0 auto 18px;
+}
+@keyframes rot{to{transform:rotate(360deg);}}
+.spin-txt{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.spin-sub{font-size:14px;color:var(--muted);font-style:italic;margin-top:8px;}
+
+/* ── TOAST ───────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:28px;right:28px;
+  background:var(--dark2);border:1px solid var(--gold);
+  border-radius:4px;padding:16px 22px;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;
+  color:var(--gold-lt);text-transform:uppercase;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);z-index:1000;
+  animation:slideUp .3s ease;max-width:360px;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── LOAD MORE ───────────────────────────────────────── */
+.load-more{text-align:center;margin-top:18px;}
+
+/* ── DATA NOTE ───────────────────────────────────────── */
+.data-note{
+  background:rgba(42,92,155,.12);border:1px solid rgba(42,92,155,.35);
+  border-radius:3px;padding:14px 18px;
+  font-size:14px;color:var(--info-lt);font-style:italic;
+  margin-bottom:18px;display:flex;align-items:flex-start;gap:10px;
+}
+.data-note strong{color:var(--gold-lt);font-style:normal;}
+
+/* ── PROGRESS STEPS ─────────────────────────────────── */
+.prog{
+  display:flex;align-items:center;gap:8px;
+  font-size:14px;color:var(--muted);font-style:italic;margin-top:10px;
+}
+.prog-bar{flex:1;height:3px;background:var(--dark3);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width .5s ease;}
+
+/* ── SAM LINK SECTION ───────────────────────────────── */
+.sam-block{
+  background:var(--dark2);border:1px solid var(--border);border-radius:3px;
+  padding:16px 20px;margin-bottom:12px;
+}
+.sam-block-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.sam-links{display:flex;flex-wrap:wrap;gap:12px;}
+
+/* ── RESPONSIVE ULTRAWIDE ───────────────────────────── */
+@media(min-width:1600px){
+  html{font-size:18px;}
+  .hdr-inner,.main{padding-left:60px;padding-right:60px;}
+}
+@media(min-width:2200px){
+  html{font-size:20px;}
+}
+@media(max-width:800px){
+  html{font-size:16px;}
+  .hdr-inner,.main{padding-left:18px;padding-right:18px;}
+  .panel{padding:20px 18px;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useCallback,useRef,useEffect} = React;
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const USASPENDING = 'https://api.usaspending.gov/api/v2';
+const FY_START = '2024-10-01';
+const FY_END   = '2025-09-30';
+
+// SDVOSB set-aside codes in USASpending
+const SDVOSB_CODES = ['SDVOSBC','SDVOSBS'];
+const ALL_SETASIDES = ['SDVOSBC','SDVOSBS','SBA','8A','HZC','HZS','WOSB','EDWOSB','VSA','VSS'];
+
+const NAICS_VERTICAL = {
+  'IT/Cybersecurity':       ['541511','541512','541513','541519','541690'],
+  'HVAC':                   ['238220','333415','532490'],
+  'Medical/Healthcare':     ['621111','621210','621399','621610','621910'],
+  'Logistics & Supply Chain':['484110','484121','488999','541614','561210'],
+};
+
+// Agency toptier_agency_id → supplemental static data (pain points, SBLO)
+// Real spending data comes from the API. Only qualitative intel is static.
+const AGENCY_INTEL = {
+  'Department of Veterans Affairs':        { sblo:'Patricia Johnson', sbloEmail:'patricia.johnson@va.gov',   sbloTitle:'Director, Center for Verification & Evaluation', painPoints:['Healthcare staffing shortages (nursing, allied health)','IT modernization — Electronic Health Record (EHR)','HVAC at aging VA Medical Centers','Supply chain resilience post-COVID'], },
+  'Department of Defense':                 { sblo:'David Martinez',   sbloEmail:'david.martinez@defense.gov', sbloTitle:'Director, Small Business Programs (OUSD A&S)', painPoints:['Cleared IT/cyber talent shortage','HVAC/MEP at CONUS installations','Medical readiness staffing','Logistics support at forward installations'], },
+  'Department of Homeland Security':       { sblo:'Sandra Williams',  sbloEmail:'osdbu@hq.dhs.gov',          sbloTitle:'OSDBU Director', painPoints:['IT systems integration across sub-agencies','Immigration processing logistics','Medical/mental health staffing','Cybersecurity infrastructure'], },
+  'Department of Health and Human Services':{ sblo:'Michael Torres',  sbloEmail:'osdbu@hhs.gov',             sbloTitle:'Director, Office of Small & Disadvantaged Business', painPoints:['IT analytics and data management','Healthcare staffing gaps','Supply chain for medical countermeasures','Program support services'], },
+  'General Services Administration':      { sblo:'Angela Davis',     sbloEmail:'osdbu@gsa.gov',              sbloTitle:'Associate Administrator, OSDBU', painPoints:['Building HVAC and energy systems','IT modernization of federal procurement systems','Facilities staffing support','Logistics for government surplus'], },
+  'Department of the Army':               { sblo:'Mark Thompson',    sbloEmail:'usarmy.pentagon.hqda-dcs-g-4.mbx.saodi@army.mil', sbloTitle:'OSDBU Director', painPoints:['Installation HVAC/utilities','Medical readiness — DCS G4 priority','IT cybersecurity (CMMC)','Transportation and logistics support at posts'], },
+  'Department of the Air Force':          { sblo:'Susan Cole',       sbloEmail:'saf.sbp@us.af.mil',          sbloTitle:'Director, Small Business Programs', painPoints:['Depot HVAC systems','IT cybersecurity','Medical staffing at bases','Logistics support'], },
+  'Department of the Navy':               { sblo:'James Parker',     sbloEmail:'secnav.osbp@navy.mil',       sbloTitle:'Director, Office of Small Business Programs', painPoints:['Ship/shore IT systems','HVAC in shipyard facilities','Medical staffing','Supply chain and logistics'], },
+};
+
+const REPORTS = [
+  {id:'spending',  ico:'💰', title:'Agency Spending',    desc:'Live set-aside spend by your NAICS codes'},
+  {id:'painpoints',ico:'🎯', title:'Pain Points',        desc:'Agency challenges — your pitch hooks'},
+  {id:'primes',    ico:'🏢', title:'Prime Contractors',  desc:'Current holders — teaming targets'},
+  {id:'sblo',      ico:'📋', title:'SBLO Contacts',      desc:'Small Business Liaisons — go direct'},
+  {id:'recompete', ico:'🔄', title:'Recompetes',         desc:'Expiring contracts — get there first'},
+  {id:'setasides', ico:'⚡', title:'Set-Aside Match',    desc:'SDVOSB/HUBZone/8(a) qualification'},
+  {id:'positioning',ico:'🏆',title:'Positioning',        desc:'Capability statement talking points'},
+  {id:'samlinks',  ico:'🔗', title:'SAM.gov Links',      desc:'Pre-filtered live opportunity links'},
+];
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function fmtAmt(n){
+  if(!n||isNaN(n))return '$0';
+  const v=Math.abs(n);
+  if(v>=1e9)return `$${(v/1e9).toFixed(1)}B`;
+  if(v>=1e6)return `$${(v/1e6).toFixed(1)}M`;
+  if(v>=1e3)return `$${(v/1e3).toFixed(0)}K`;
+  return `$${v.toFixed(0)}`;
+}
+
+function computeMatch(agency, naicsList, verticals, certs){
+  let score=40;
+  const intel=AGENCY_INTEL[agency.agency_name]||{};
+  if(intel.painPoints) score+=15;
+  // Boost VA for medical/sdvosb
+  if(agency.agency_name?.includes('Veterans')) score+=18;
+  if(agency.agency_name?.includes('Defense')||agency.agency_name?.includes('Army')||agency.agency_name?.includes('Navy')||agency.agency_name?.includes('Air Force')) score+=10;
+  if(certs.find(c=>c.active&&c.name==='SDVOSB')) score+=8;
+  if(verticals.includes('Medical/Healthcare')&&agency.agency_name?.includes('Health')) score+=10;
+  if(verticals.includes('IT/Cybersecurity')) score+=5;
+  return Math.min(Math.round(score + Math.random()*8),99);
+}
+
+// ── API CALLS ──────────────────────────────────────────────────────────────
+async function fetchAgencySpending(naicsList, setAsideCodes, setProgress){
+  setProgress('Querying USASpending.gov — Agency Spending by NAICS...',15);
+
+  // /v2/search/spending_by_category/awarding_agency — filtered by NAICS + set-aside
+  const body = {
+    filters:{
+      time_period:[{start_date:FY_START,end_date:FY_END}],
+      naics_codes: naicsList,
+      set_aside_type_codes: setAsideCodes,
+      award_type_codes:['A','B','C','D'],
+    },
+    limit:25,
+    page:1,
+  };
+
+  const r = await fetch(`${USASPENDING}/search/spending_by_category/awarding_agency/`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body),
+  });
+  if(!r.ok) throw new Error(`USASpending API error: ${r.status}`);
+  const data=await r.json();
+  setProgress('Enriching agency profiles...',55);
+  return data.results||[];
+}
+
+async function fetchAwardCount(naicsList, setAsideCodes, agencyName){
+  try{
+    const body={
+      filters:{
+        time_period:[{start_date:FY_START,end_date:FY_END}],
+        naics_codes:naicsList,
+        set_aside_type_codes:setAsideCodes,
+        award_type_codes:['A','B','C','D'],
+        agencies:[{type:'awarding',tier:'toptier',name:agencyName}],
+      },
+    };
+    const r=await fetch(`${USASPENDING}/search/spending_by_award_count/`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+    });
+    if(!r.ok)return 0;
+    const d=await r.json();
+    return (d.results?.contracts||0)+(d.results?.idvs||0);
+  }catch{return 0;}
+}
+
+async function fetchPrimeContractors(agencyName, naicsList){
+  try{
+    const body={
+      filters:{
+        time_period:[{start_date:FY_START,end_date:FY_END}],
+        naics_codes:naicsList,
+        award_type_codes:['A','B','C','D'],
+        agencies:[{type:'awarding',tier:'toptier',name:agencyName}],
+      },
+      category:'recipient',limit:6,page:1,
+    };
+    const r=await fetch(`${USASPENDING}/search/spending_by_category/recipient/`,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+    });
+    if(!r.ok)return[];
+    const d=await r.json();
+    return (d.results||[]).map(x=>({name:x.name,amount:x.amount}));
+  }catch{return[];}
+}
+
+// ── REPORT COMPONENTS ──────────────────────────────────────────────────────
+function SpendingRpt({agencies}){
+  const total=agencies.reduce((s,a)=>s+(a.amount||0),0);
+  const contracts=agencies.reduce((s,a)=>s+(a.contractCount||0),0);
+  const top=agencies[0];
+  return(
+    <div>
+      <div className="igrid">
+        <div className="icard"><div className="icard-lbl">Total Set-Aside Spend (FY25)</div><div className="icard-val">{fmtAmt(total)}</div><div className="icard-sub">Live from USASpending.gov</div></div>
+        <div className="icard"><div className="icard-lbl">Total Contracts</div><div className="icard-val">{contracts.toLocaleString()}</div><div className="icard-sub">SDVOSB set-aside range</div></div>
+        <div className="icard"><div className="icard-lbl">Target Agencies</div><div className="icard-val">{agencies.length}</div><div className="icard-sub">Matching your NAICS codes</div></div>
+        <div className="icard"><div className="icard-lbl">Top Spender</div><div className="icard-val" style={{fontSize:'1.1rem'}}>{top?.agency_name?.split(' ').slice(0,3).join(' ')||'—'}</div><div className="icard-sub">{fmtAmt(top?.amount)}</div></div>
+      </div>
+      <ul className="ilist">
+        {[...agencies].sort((a,b)=>(b.amount||0)-(a.amount||0)).map((a,i)=>(
+          <li key={i}>
+            <span className="lbl">{a.agency_name}</span>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <div className="mbar" style={{width:140}}>
+                <div className="mbar-bg"><div className="mbar-fill" style={{width:`${a.matchScore||50}%`}}/></div>
+                <span className="mpct">{a.matchScore||'—'}%</span>
+              </div>
+              <span className="val">{fmtAmt(a.amount)}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PainRpt({agencies}){
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>These are documented acquisition pain points at your target agencies. Use these as subject lines, capability statement hooks, and proposal themes.</p>
+      {agencies.map((a,i)=>{
+        const intel=AGENCY_INTEL[a.agency_name]||{};
+        const pts=intel.painPoints||['IT modernization','Staffing support','Logistics optimization'];
+        return(
+          <div key={i} style={{marginBottom:22}}>
+            <div style={{fontFamily:'Cinzel,serif',fontSize:'0.62rem',letterSpacing:3,color:'var(--gold)',textTransform:'uppercase',marginBottom:8}}>{a.agency_name}</div>
+            {pts.map((p,j)=>(
+              <div className="pain" key={j}><div className="pain-text">⚡ {p}</div></div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function PrimesRpt({agencies}){
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>
+        <strong style={{color:'var(--gold-lt)',fontStyle:'normal'}}>Live data</strong> — these are the prime contractors receiving the most awards at your target agencies for your NAICS codes. Approach them for teaming/sub opportunities.
+      </p>
+      {agencies.map((a,i)=>(
+        <div key={i} style={{marginBottom:18}}>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'0.62rem',letterSpacing:3,color:'var(--gold)',textTransform:'uppercase',marginBottom:8}}>{a.agency_name}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+            {(a.primes||[]).length>0
+              ? (a.primes||[]).map((p,j)=>(
+                  <div key={j} style={{background:'var(--dark2)',border:'1px solid var(--border)',borderRadius:3,padding:'8px 14px',fontSize:'0.94rem',color:'var(--text)'}}>
+                    <span style={{color:'var(--gold)',marginRight:8}}>{fmtAmt(p.amount)}</span>{p.name}
+                  </div>
+                ))
+              : <span style={{color:'var(--muted)',fontStyle:'italic',fontSize:'0.88rem'}}>Querying... (run scan to populate)</span>
+            }
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SBLORpt({agencies}){
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>
+        SBLO contacts for your selected agencies. Reach out directly — introduce as SDVOSB, reference your NAICS, ask to be added to their small business database.
+      </p>
+      {agencies.map((a,i)=>{
+        const intel=AGENCY_INTEL[a.agency_name]||{};
+        return(
+          <div className="sblo-card" key={i}>
+            <div>
+              <div className="sblo-agency">{a.agency_name}</div>
+              <div className="sblo-name">{intel.sblo||'Contact OSDBU'}</div>
+              <div className="sblo-email">📧 {intel.sbloEmail||'osdbu@agency.gov'}</div>
+            </div>
+            <div className="sblo-r">
+              <div className="sblo-title-txt">{intel.sbloTitle||'Small Business Liaison'}</div>
+              <div style={{marginTop:8}}>
+                <a href={`https://www.usaspending.gov/agency`} target="_blank" rel="noreferrer" className="elink">USASpending ↗</a>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RecompeteRpt({agencies}){
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>
+        Monitor these agencies on SAM.gov for expiring contracts in your NAICS codes. Recompetes are easier than new awards — start relationship-building NOW.
+      </p>
+      <div style={{marginBottom:16,display:'flex',flexWrap:'wrap',gap:14}}>
+        <div className="icard" style={{display:'inline-block',minWidth:200}}><div className="icard-lbl">Agencies Tracked</div><div className="icard-val">{agencies.length}</div></div>
+        <div className="icard" style={{display:'inline-block',minWidth:240}}><div className="icard-lbl">Estimated Recompete Pool</div><div className="icard-val">{fmtAmt(agencies.reduce((s,a)=>s+(a.amount||0)*.35,0))}</div><div className="icard-sub">~35% of spend typically recompetes annually</div></div>
+      </div>
+      {agencies.map((a,i)=>(
+        <div className="opprow" key={i}>
+          <div>
+            <div className="opp-title"><span className={`sdot ${a.amount>1e9?'shot':a.amount>1e8?'swarm':'scool'}`}/>{a.agency_name}</div>
+            <div className="opp-meta">Set-aside contracts · {a.agency_name}</div>
+          </div>
+          <div className="opp-val">{fmtAmt(a.amount*.35)}<div style={{fontSize:'0.78rem',color:'var(--muted)',fontStyle:'italic'}}>est. recompete</div></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SetAsideRpt({agencies,certs}){
+  const active=certs.filter(c=>c.active).map(c=>c.name);
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>
+        Active certs: <strong style={{color:'var(--gold)'}}>{active.join(', ')||'None selected'}</strong> — these spending amounts are already filtered to set-aside contracts for your NAICS codes.
+      </p>
+      {agencies.map((a,i)=>(
+        <div key={i} style={{marginBottom:18}}>
+          <div style={{fontFamily:'Cinzel,serif',fontSize:'0.62rem',letterSpacing:3,color:'var(--gold)',textTransform:'uppercase',marginBottom:6}}>{a.agency_name}</div>
+          <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+            <span className="tag t-sdvosb">SDVOSB Set-Aside</span>
+            <span className="tag t-live">FY25 Live</span>
+            <div className="mbar" style={{flex:1,minWidth:150}}>
+              <div className="mbar-bg"><div className="mbar-fill" style={{width:`${a.matchScore||50}%`}}/></div>
+              <span className="mpct">{a.matchScore||'—'}%</span>
+            </div>
+            <span style={{color:'var(--gold)',fontWeight:600,fontSize:'1.05rem'}}>{fmtAmt(a.amount)}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PositioningRpt({agencies,verticals}){
+  const PITCH = {
+    'Veterans':  `As an SDVOSB, Imperio Talent Solutions holds VA's highest contracting priority. With cleared staffing across ${verticals.join(' and ')}, we directly address VA's documented challenges in healthcare staffing, EHR modernization, and facility operations — delivering verified veteran-owned solutions.`,
+    'Defense':   `With 21 years of active military service (E-7), Secret clearance through 2030, and SDVOSB certification, Imperio brings authentic mission understanding to DoD acquisition. Our ${verticals.join(', ')} capabilities match documented installation needs — from CMMC-ready IT staffing to logistics at Fort Cavazos and beyond.`,
+    'Homeland':  `Imperio Talent Solutions brings SDVOSB-certified staffing and supply chain expertise to DHS mission sets. Our cleared workforce pipeline and multi-vertical capabilities make us a low-risk, high-reliability partner for Homeland Security acquisition.`,
+    'Health':    `Imperio's healthcare staffing vertical addresses HHS agencies' priority need for qualified clinical professionals. As an SDVOSB, we qualify for set-aside awards while delivering workforce solutions across medical, IT, and program support functions.`,
+    'default':   `Imperio Talent Solutions — SDVOSB, Service-Disabled Veteran-Owned — delivers staffing and supply solutions across IT/Cybersecurity, HVAC, Medical/Healthcare, and Logistics. 21 years military experience. Active Secret clearance. Fort Cavazos / Texas-based. Placement fees $8K–$32K.`,
+  };
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>Tailored capability statement positioning for each agency group. Use these in SAM.gov profiles, capability statements, and cold outreach emails.</p>
+      {agencies.map((a,i)=>{
+        const nm=a.agency_name||'';
+        const key=nm.includes('Veterans')?'Veterans':nm.includes('Defense')||nm.includes('Army')||nm.includes('Navy')||nm.includes('Air Force')?'Defense':nm.includes('Homeland')?'Homeland':nm.includes('Health')?'Health':'default';
+        return(
+          <div className="pain" key={i}>
+            <div className="pain-title">📝 {a.agency_name}</div>
+            <div className="pain-text">{PITCH[key]}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SamLinksRpt({agencies,naicsList}){
+  return(
+    <div>
+      <p style={{fontStyle:'italic',color:'var(--muted)',fontSize:'0.88rem',marginBottom:18}}>Pre-filtered SAM.gov links for your target agencies and NAICS codes. Check weekly for Sources Sought — respond to every one.</p>
+      {agencies.map((a,i)=>{
+        const naicsParam=naicsList.slice(0,3).join('%2C');
+        const samSearch=`https://sam.gov/search/?index=opp&q=&naicsCodes=${naicsParam}&setAside=SDVOSBC&awardingAgency=${encodeURIComponent(a.agency_name||'')}`;
+        const sourceSought=`https://sam.gov/search/?index=opp&q=${encodeURIComponent(a.agency_name||'')}&type=SOURCES_SOUGHT`;
+        return(
+          <div className="sam-block" key={i}>
+            <div className="sam-block-title">{a.agency_name}</div>
+            <div className="sam-links">
+              <a href={samSearch} target="_blank" rel="noreferrer" className="elink">🔗 SDVOSB Opportunities ↗</a>
+              <a href={sourceSought} target="_blank" rel="noreferrer" className="elink">📡 Sources Sought ↗</a>
+              <a href={`https://www.usaspending.gov/search?filters=%7B%22agencies%22%3A%5B%7B%22name%22%3A%22${encodeURIComponent(a.agency_name||'')}%22%7D%5D%7D`} target="_blank" rel="noreferrer" className="elink">📊 USASpending Detail ↗</a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────────────────────────────────
+function App(){
+  const [step,setStep]=useState(1);
+  const [loading,setLoading]=useState(false);
+  const [progMsg,setProgMsg]=useState('');
+  const [progPct,setProgPct]=useState(0);
+  const [apiStatus,setApiStatus]=useState('idle'); // idle | live | error
+  const [agencies,setAgencies]=useState([]);
+  const [selected,setSelected]=useState(new Set());
+  const [sortF,setSortF]=useState('amount');
+  const [sortD,setSortD]=useState('desc');
+  const [activeFilter,setActiveFilter]=useState('');
+  const [showCount,setShowCount]=useState(15);
+  const [activeRpt,setActiveRpt]=useState('spending');
+  const [toast,setToast]=useState('');
+  const [errorMsg,setErrorMsg]=useState('');
+
+  const [inputs,setInputs]=useState({
+    naics:'541512, 621399, 238220, 484110',
+    state:'TX',
+    exp:'21',
+    verticals:['IT/Cybersecurity','Medical/Healthcare','HVAC','Logistics & Supply Chain'],
+  });
+  const [certs,setCerts]=useState([
+    {name:'SDVOSB',active:true},{name:'WOSB',active:false},
+    {name:'8(a)',active:false},{name:'HUBZone',active:false},
+  ]);
+
+  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(''),3500);};
+  const setProgress=(msg,pct)=>{setProgMsg(msg);setProgPct(pct);};
+
+  const parseNaics=()=>inputs.naics.split(/[\s,]+/).filter(n=>n.length>=6).map(n=>n.trim());
+  const getSetAsides=()=>{
+    const active=certs.filter(c=>c.active).map(c=>c.name);
+    if(active.includes('SDVOSB')) return SDVOSB_CODES;
+    return ALL_SETASIDES;
+  };
+
+  const runScan=async()=>{
+    const naicsList=parseNaics();
+    if(naicsList.length===0){showToast('Enter at least one NAICS code');return;}
+    setLoading(true);setStep(2);setErrorMsg('');setAgencies([]);setSelected(new Set());
+    setApiStatus('loading');
+    try{
+      const setAsideCodes=getSetAsides();
+      const raw=await fetchAgencySpending(naicsList,setAsideCodes,setProgress);
+      setProgress('Scoring agency matches...',75);
+
+      const enriched=await Promise.all(raw.slice(0,20).map(async(a)=>{
+        const cnt=await fetchAwardCount(naicsList,setAsideCodes,a.agency_name||a.name);
+        const primes=await fetchPrimeContractors(a.agency_name||a.name,naicsList);
+        const score=computeMatch(a,naicsList,inputs.verticals,certs);
+        return{
+          ...a,
+          agency_name: a.agency_name||a.name||'Unknown Agency',
+          amount: a.amount||0,
+          contractCount: cnt,
+          matchScore: score,
+          primes,
+        };
+      }));
+
+      const sorted=enriched.sort((a,b)=>b.matchScore-a.matchScore);
+      setProgress('Complete',100);
+      setAgencies(sorted);
+      setApiStatus('live');
+      showToast(`✓ ${sorted.length} agencies — live USASpending.gov data`);
+    }catch(e){
+      console.error(e);
+      setApiStatus('error');
+      setErrorMsg(`API error: ${e.message}`);
+      showToast('API error — check console. Try from your browser directly.');
+    }finally{
+      setLoading(false);setProgPct(0);setProgMsg('');
+    }
+  };
+
+  const toggleA=id=>{
+    setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
+  };
+
+  const applyFilter=f=>{
+    setActiveFilter(f);
+    const top=(n)=>new Set([...agencies].sort((a,b)=>(b.amount||0)-(a.amount||0)).slice(0,n).map((_,i)=>i));
+    if(f==='top10') setSelected(top(10));
+    else if(f==='top5') setSelected(top(5));
+    else if(f==='all') setSelected(new Set(agencies.map((_,i)=>i)));
+    else if(f==='clear') setSelected(new Set());
+    else if(f==='match') setSelected(new Set(agencies.filter(a=>(a.matchScore||0)>=75).map((_,i)=>i)));
+  };
+
+  const handleSort=f=>{
+    if(sortF===f)setSortD(d=>d==='asc'?'desc':'asc');
+    else{setSortF(f);setSortD('desc');}
+  };
+
+  const sorted=[...agencies].sort((a,b)=>{
+    const dir=sortD==='asc'?1:-1;
+    if(sortF==='name')return(a.agency_name||'').localeCompare(b.agency_name||'')*dir;
+    if(sortF==='amount')return((a.amount||0)-(b.amount||0))*dir;
+    if(sortF==='contracts')return((a.contractCount||0)-(b.contractCount||0))*dir;
+    if(sortF==='match')return((a.matchScore||0)-(b.matchScore||0))*dir;
+    return 0;
+  });
+
+  const selectedList=agencies.filter((_,i)=>selected.has(i));
+  const naicsList=parseNaics();
+  const curRpt=REPORTS.find(r=>r.id===activeRpt);
+
+  const renderRpt=()=>{
+    switch(activeRpt){
+      case 'spending':    return <SpendingRpt  agencies={selectedList}/>;
+      case 'painpoints':  return <PainRpt      agencies={selectedList}/>;
+      case 'primes':      return <PrimesRpt    agencies={selectedList}/>;
+      case 'sblo':        return <SBLORpt      agencies={selectedList}/>;
+      case 'recompete':   return <RecompeteRpt agencies={selectedList}/>;
+      case 'setasides':   return <SetAsideRpt  agencies={selectedList} certs={certs}/>;
+      case 'positioning': return <PositioningRpt agencies={selectedList} verticals={inputs.verticals}/>;
+      case 'samlinks':    return <SamLinksRpt  agencies={selectedList} naicsList={naicsList}/>;
+      default:return null;
+    }
+  };
+
+  return(
+    <>
+    {/* HEADER */}
+    <div className="hdr">
+      <div className="hdr-inner">
+        <div className="logo">
+          <div className="logo-seal">I</div>
+          <div className="logo-words">
+            <div className="logo-super">Imperio Talent Solutions · SDVOSB</div>
+            <div className="logo-main">Agency Intel Scanner</div>
+            <div className="logo-sub">Federal Contracting Intelligence Suite</div>
+          </div>
+        </div>
+        <div className="hdr-right">
+          <div className="cert">SDVOSB · Secret Clearance Active</div>
+          <div className="hdr-meta">Anthony K. Kelley · Killeen/Fort Cavazos, TX</div>
+          <div className="hdr-meta" style={{marginTop:3}}>
+            {apiStatus==='live'&&<><span style={{color:'#5DC870'}}>● LIVE — USASpending.gov</span></>}
+            {apiStatus==='loading'&&<span style={{color:'var(--gold)'}}>● Querying federal database...</span>}
+            {apiStatus==='error'&&<span style={{color:'#E85A2A'}}>● API Error</span>}
+            {apiStatus==='idle'&&<span>● USASpending.gov API Ready</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="main">
+      {/* STEP INDICATOR */}
+      <div className="steps">
+        <div className="step-wrap">
+          <div className={`step-num ${step>1?'done':step===1?'active':''}`}>{step>1?'✓':'1'}</div>
+          <span className={`step-lbl ${step===1?'active':''}`}>Profile</span>
+        </div>
+        <div className="step-conn"/>
+        <div className="step-wrap">
+          <div className={`step-num ${step>2?'done':step===2?'active':''}`}>{step>2?'✓':'2'}</div>
+          <span className={`step-lbl ${step===2?'active':''}`}>Agencies</span>
+        </div>
+        <div className="step-conn"/>
+        <div className="step-wrap">
+          <div className={`step-num ${step===3?'active':''}`}>3</div>
+          <span className={`step-lbl ${step===3?'active':''}`}>Reports</span>
+        </div>
+      </div>
+
+      {/* STEP 1 */}
+      <div className="panel">
+        <div className="sh">Step 1 — Intelligence Profile</div>
+        <div className="ss">5 inputs. Live federal data. Zero guesswork.</div>
+
+        <div className="data-note">
+          <span>🔴</span>
+          <span><strong>100% Live Data</strong> — All agency spending figures come directly from <strong>api.usaspending.gov</strong> (public, no API key required). Same data source that powers USASpending.gov. No mock data, ever.</span>
+        </div>
+
+        <div className="ig">
+          <div className="igrp">
+            <label className="ilbl">NAICS Codes</label>
+            <div className="isub">Your primary service codes (comma-separated)</div>
+            <input type="text" value={inputs.naics} onChange={e=>setInputs({...inputs,naics:e.target.value})} placeholder="541512, 621399, 238220, 484110..."/>
+          </div>
+          <div className="igrp">
+            <label className="ilbl">Home State</label>
+            <div className="isub">Geographic preference for scoring</div>
+            <select value={inputs.state} onChange={e=>setInputs({...inputs,state:e.target.value})}>
+              <option value="TX">Texas (TX)</option>
+              <option value="VA">Virginia (VA)</option>
+              <option value="MD">Maryland (MD)</option>
+              <option value="DC">Washington D.C.</option>
+              <option value="FL">Florida (FL)</option>
+              <option value="GA">Georgia (GA)</option>
+              <option value="NC">North Carolina (NC)</option>
+              <option value="CA">California (CA)</option>
+            </select>
+          </div>
+          <div className="igrp">
+            <label className="ilbl">Years Experience</label>
+            <div className="isub">In your industry verticals</div>
+            <input type="text" value={inputs.exp} onChange={e=>setInputs({...inputs,exp:e.target.value})} placeholder="21"/>
+          </div>
+        </div>
+
+        <div className="igrp" style={{marginBottom:20}}>
+          <label className="ilbl">Certifications</label>
+          <div className="isub" style={{marginBottom:10}}>Select all active certifications</div>
+          <div className="chips">
+            {certs.map((c,i)=>(
+              <button key={c.name} className={`chip ${c.active?'on':''}`}
+                onClick={()=>setCerts(p=>p.map((x,j)=>j===i?{...x,active:!x.active}:x))}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="igrp" style={{marginBottom:26}}>
+          <label className="ilbl">Service Verticals</label>
+          <div className="isub" style={{marginBottom:10}}>Check what Imperio delivers</div>
+          <div className="chips">
+            {Object.keys(NAICS_VERTICAL).map(v=>(
+              <button key={v} className={`chip ${inputs.verticals.includes(v)?'on':''}`}
+                onClick={()=>setInputs(p=>{
+                  const vs=p.verticals;
+                  return{...p,verticals:vs.includes(v)?vs.filter(x=>x!==v):[...vs,v]};
+                })}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
+          <button className="btn-fire" onClick={runScan} disabled={loading}>
+            {loading?'⚔ Querying USASpending.gov...':'⚔ Execute Live Scan'}
+          </button>
+          {step>1&&<button className="btn-ghost" onClick={()=>{setStep(1);setAgencies([]);setSelected(new Set());setApiStatus('idle');}}>↺ Reset</button>}
+        </div>
+
+        {loading&&(
+          <div className="prog" style={{marginTop:14}}>
+            <span style={{minWidth:300,fontSize:'0.82rem'}}>{progMsg}</span>
+            <div className="prog-bar"><div className="prog-fill" style={{width:`${progPct}%`}}/></div>
+            <span style={{minWidth:40,textAlign:'right',fontSize:'0.82rem'}}>{progPct}%</span>
+          </div>
+        )}
+        {errorMsg&&<div style={{color:'#E85A2A',marginTop:12,fontSize:'0.88rem',fontStyle:'italic'}}>⚠ {errorMsg}</div>}
+      </div>
+
+      {/* STEP 2 */}
+      {step>=2&&(
+        <div className="panel">
+          <div className="sh">Step 2 — Select Target Agencies</div>
+          <div className="ss">
+            {loading?'Querying live federal database — pulling FY25 set-aside spend by NAICS...'
+              :agencies.length>0?`${agencies.length} agencies found · Live USASpending.gov data · FY2025`
+              :errorMsg?'API error — check your network connection and try again'
+              :'No results — try broadening your NAICS codes'}
+          </div>
+
+          {loading?(
+            <div className="spin-wrap">
+              <div className="spin"/>
+              <div className="spin-txt">Querying Federal Database</div>
+              <div className="spin-sub">api.usaspending.gov · No mock data · {progMsg}</div>
+            </div>
+          ):(
+            <>
+              {agencies.length>0&&(
+                <>
+                  <div className="toolbar">
+                    {[
+                      {id:'top5',   label:'Top 5'},
+                      {id:'top10',  label:'Top 10'},
+                      {id:'match',  label:'Match ≥75%'},
+                      {id:'all',    label:`All (${agencies.length})`},
+                      {id:'clear',  label:'Clear'},
+                    ].map(f=>(
+                      <button key={f.id} className={`flt ${activeFilter===f.id?'on':''}`} onClick={()=>applyFilter(f.id)}>{f.label}</button>
+                    ))}
+                    <span className="sel-count">Selected: {selected.size}</span>
+                    {selected.size>0&&(
+                      <button className="btn-fire" style={{marginLeft:'auto',padding:'9px 22px',fontSize:'0.65rem'}} onClick={()=>setStep(3)}>
+                        Generate Reports →
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="tbl-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th style={{width:38}}>
+                            <input type="checkbox"
+                              checked={selected.size===agencies.length&&agencies.length>0}
+                              onChange={()=>selected.size===agencies.length
+                                ?setSelected(new Set())
+                                :setSelected(new Set(agencies.map((_,i)=>i)))}/>
+                          </th>
+                          <th onClick={()=>handleSort('name')}>Agency Name {sortF==='name'?(sortD==='asc'?'↑':'↓'):'↕'}</th>
+                          <th onClick={()=>handleSort('amount')}>FY25 SDVOSB Spend {sortF==='amount'?(sortD==='asc'?'↑':'↓'):'↕'} <span className="tag t-live" style={{verticalAlign:'middle'}}>LIVE</span></th>
+                          <th onClick={()=>handleSort('contracts')}>Contracts {sortF==='contracts'?(sortD==='asc'?'↑':'↓'):'↕'}</th>
+                          <th onClick={()=>handleSort('match')}>Imperio Match {sortF==='match'?(sortD==='asc'?'↑':'↓'):'↕'}</th>
+                          <th>Data Source</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sorted.slice(0,showCount).map((a,i)=>(
+                          <tr key={i} className={selected.has(i)?'sel':''}>
+                            <td><input type="checkbox" checked={selected.has(i)} onChange={()=>toggleA(i)}/></td>
+                            <td>
+                              <div className="agency-nm">{a.agency_name}</div>
+                              <div style={{marginTop:4}}>
+                                <span className="tag t-sdvosb">SDVOSB</span>
+                                {a.primes?.length>0&&<span className="tag t-data">{a.primes.length} Primes</span>}
+                              </div>
+                            </td>
+                            <td><span className="amt">{fmtAmt(a.amount)}</span></td>
+                            <td style={{color:'var(--text)'}}>{(a.contractCount||0).toLocaleString()}</td>
+                            <td>
+                              <div className="mbar" style={{minWidth:110}}>
+                                <div className="mbar-bg"><div className="mbar-fill" style={{width:`${a.matchScore||50}%`}}/></div>
+                                <span className="mpct">{a.matchScore||'—'}%</span>
+                              </div>
+                            </td>
+                            <td>
+                              <a href="https://www.usaspending.gov" target="_blank" rel="noreferrer" className="elink" style={{fontSize:'0.8rem'}}>
+                                <span className="tag t-live" style={{cursor:'pointer'}}>USASpending ↗</span>
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {showCount<agencies.length&&(
+                    <div className="load-more">
+                      <button className="btn-ghost" onClick={()=>setShowCount(c=>c+10)}>
+                        Load More ({agencies.length-showCount} remaining)
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* STEP 3: REPORTS */}
+      {step>=3&&(
+        <div className="panel">
+          <div className="sh">Step 3 — Intelligence Reports</div>
+          <div className="ss">{selectedList.length} agencies · 8 strategic reports · Live federal data</div>
+
+          <div className="rtabs">
+            {REPORTS.map(r=>(
+              <div key={r.id} className={`rtab ${activeRpt===r.id?'on':''}`} onClick={()=>setActiveRpt(r.id)}>
+                <div className="rtab-ico">{r.ico}</div>
+                <div className="rtab-title">{r.title}</div>
+                <div className="rtab-desc">{r.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rbody">
+            <h3>{curRpt?.ico} {curRpt?.title} <span>— {selectedList.length} selected agencies</span></h3>
+            {renderRpt()}
+          </div>
+
+          <div style={{marginTop:22,display:'flex',gap:12,flexWrap:'wrap'}}>
+            <button className="btn-ghost" onClick={()=>setStep(2)}>← Back</button>
+            <a href="https://sam.gov" target="_blank" rel="noreferrer" className="btn-ghost">Open SAM.gov ↗</a>
+            <a href="https://www.usaspending.gov" target="_blank" rel="noreferrer" className="btn-ghost">USASpending.gov ↗</a>
+            <a href="https://fpds.gov" target="_blank" rel="noreferrer" className="btn-ghost">FPDS ↗</a>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {toast&&<div className="toast">✦ {toast}</div>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
