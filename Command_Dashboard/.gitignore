@@ -1,0 +1,13 @@
+# Environment variables (NEVER commit this)
+.env
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Netlify
+.netlify/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+{
+  "name": "imperio-ops-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Imperio Command Center",
+  "dependencies": {
+    "mongodb": "^6.3.0"
+  }
+}

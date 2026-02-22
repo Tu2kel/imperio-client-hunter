@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imperio Command Center</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // API Helper
+        const API = {
+            async get(endpoint) {
+                const res = await fetch(`/api/${endpoint}`);
+                if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
+                return res.json();
+            },
+            async post(endpoint, data) {
+                const res = await fetch(`/api/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error(`Failed to save ${endpoint}`);
+                return res.json();
+            },
+            async delete(endpoint, id) {
+                const res = await fetch(`/api/${endpoint}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (!res.ok) throw new Error(`Failed to delete ${endpoint}`);
+                return res.json();
+            }
+        };
+
+        // Icon Components (same as before, keeping them compact)
+        const Icon = ({ children, className = "" }) => <svg className={className} viewBox="0 0 24 24">{children}</svg>;
+        const Home = ({ className }) => <Icon className={className}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+        const Building2 = ({ className }) => <Icon className={className}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></Icon>;
+        const FileText = ({ className }) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></Icon>;
+        const Users = ({ className }) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></Icon>;
+        const DollarSign = ({ className }) => <Icon className={className}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></Icon>;
+        const UserCheck = ({ className }) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></Icon>;
+        const FileCheck = ({ className }) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></Icon>;
+        const Shield = ({ className }) => <Icon className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>;
+        const Calculator = ({ className }) => <Icon className={className}><rect x="4" y="2" width="16" height="20" rx="2"/></Icon>;
+        const FileSignature = ({ className }) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></Icon>;
+        const Target = ({ className }) => <Icon className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Icon>;
+        const Award = ({ className }) => <Icon className={className}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></Icon>;
+        const Package = ({ className }) => <Icon className={className}><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></Icon>;
+        const Plus = ({ className }) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+        const Edit = ({ className }) => <Icon className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Icon>;
+        const Trash2 = ({ className }) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>;
+        const Save = ({ className }) => <Icon className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></Icon>;
+        const X = ({ className }) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+        const Download = ({ className }) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></Icon>;
+
+        const ImperioCommandCenter = () => {
+            const [activeModule, setActiveModule] = useState('dashboard');
+            const [clients, setClients] = useState([]);
+            const [bids, setBids] = useState([]);
+            const [quotes, setQuotes] = useState([]);
+            const [purchaseOrders, setPurchaseOrders] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            const [showClientForm, setShowClientForm] = useState(false);
+            const [showBidForm, setShowBidForm] = useState(false);
+            const [editingClient, setEditingClient] = useState(null);
+            const [editingBid, setEditingBid] = useState(null);
+
+            useEffect(() => {
+                loadData();
+            }, []);
+
+            const loadData = async () => {
+                setLoading(true);
+                try {
+                    const [clientsData, bidsData, quotesData, posData] = await Promise.all([
+                        API.get('get-clients'),
+                        API.get('get-bids'),
+                        API.get('get-quotes'),
+                        API.get('get-pos')
+                    ]);
+                    setClients(clientsData);
+                    setBids(bidsData);
+                    setQuotes(quotesData);
+                    setPurchaseOrders(posData);
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const saveClient = async (clientData) => {
+                try {
+                    await API.post('save-client', clientData);
+                    await loadData();
+                    setShowClientForm(false);
+                    setEditingClient(null);
+                } catch (error) {
+                    alert('Failed to save client: ' + error.message);
+                }
+            };
+
+            const deleteClient = async (id) => {
+                if (confirm('Delete this client?')) {
+                    try {
+                        await API.delete('delete-client', id);
+                        await loadData();
+                    } catch (error) {
+                        alert('Failed to delete client: ' + error.message);
+                    }
+                }
+            };
+
+            const saveBid = async (bidData) => {
+                try {
+                    await API.post('save-bid', bidData);
+                    await loadData();
+                    setShowBidForm(false);
+                    setEditingBid(null);
+                } catch (error) {
+                    alert('Failed to save bid: ' + error.message);
+                }
+            };
+
+            const deleteBid = async (id) => {
+                if (confirm('Delete this bid?')) {
+                    try {
+                        await API.delete('delete-bid', id);
+                        await loadData();
+                    } catch (error) {
+                        alert('Failed to delete bid: ' + error.message);
+                    }
+                }
+            };
+
+            const calculateDaysUntil = (dateString) => {
+                if (!dateString) return null;
+                const target = new Date(dateString);
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                target.setHours(0, 0, 0, 0);
+                return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+            };
+
+            const getCountdownClass = (days) => {
+                if (days === null || days < 0) return 'countdown-black';
+                if (days <= 6) return 'countdown-red';
+                if (days <= 13) return 'countdown-yellow';
+                return 'countdown-green';
+            };
+
+            const navItems = [
+                { id: 'dashboard', icon: Home, label: 'Dashboard' },
+                { id: 'clients', icon: Building2, label: 'Clients' },
+                { id: 'bids', icon: Target, label: 'Bid Tracker' },
+                { id: 'capstatement', icon: Award, label: 'Cap Statement' },
+                { id: 'supply', icon: Package, label: 'Supply & PO' }
+            ];
+
+            if (loading) {
+                return (
+                    <div>
+                        <header className="header">
+                            <div className="header-content">
+                                <Shield className="icon-xl" style={{color: 'var(--imperial-gold)'}} />
+                                <div>
+                                    <h1 className="header-title serif-font">IMPERIO COMMAND CENTER</h1>
+                                    <p className="header-subtitle">Loading...</p>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="loading">Loading data from cloud</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div>
+                    <header className="header">
+                        <div className="header-content">
+                            <Shield className="icon-xl" style={{color: 'var(--imperial-gold)'}} />
+                            <div>
+                                <h1 className="header-title serif-font">IMPERIO COMMAND CENTER</h1>
+                                <p className="header-subtitle">Imperio Talent Solutions | SDVOSB Operations Hub</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="app-container">
+                        <aside className="sidebar">
+                            <nav>
+                                {navItems.map(({ id, icon: Icon, label }) => (
+                                    <button
+                                        key={id}
+                                        onClick={() => setActiveModule(id)}
+                                        className={`nav-button ${activeModule === id ? 'active' : ''}`}
+                                    >
+                                        <Icon />
+                                        <span>{label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </aside>
+
+                        <main className="main-content">
+                            {/* Dashboard Module */}
+                            {activeModule === 'dashboard' && (
+                                <div>
+                                    <h2 className="page-title serif-font">Dashboard</h2>
+                                    <div className="grid grid-cols-4">
+                                        <div className="stat-card">
+                                            <Building2 className="icon-lg" style={{marginBottom: '1rem'}} />
+                                            <p className="stat-label">Active Clients</p>
+                                            <p className="stat-value">{clients.filter(c => c.status === 'Active').length}</p>
+                                        </div>
+                                        <div className="stat-card green">
+                                            <Target className="icon-lg" style={{marginBottom: '1rem'}} />
+                                            <p className="stat-label">Active Bids</p>
+                                            <p className="stat-value">{bids.filter(b => !['Won', 'Lost', 'No Bid'].includes(b.status)).length}</p>
+                                        </div>
+                                        <div className="stat-card purple">
+                                            <Package className="icon-lg" style={{marginBottom: '1rem'}} />
+                                            <p className="stat-label">Open POs</p>
+                                            <p className="stat-value">{purchaseOrders.filter(po => po.status !== 'Paid').length}</p>
+                                        </div>
+                                        <div className="stat-card yellow">
+                                            <DollarSign className="icon-lg" style={{marginBottom: '1rem'}} />
+                                            <p className="stat-label">Quotes Sent</p>
+                                            <p className="stat-value">{quotes.filter(q => q.status === 'Sent').length}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Clients Module */}
+                            {activeModule === 'clients' && (
+                                <div>
+                                    <div className="page-header">
+                                        <h2 className="page-title serif-font">Clients</h2>
+                                        <button onClick={() => setShowClientForm(true)} className="btn btn-primary">
+                                            <Plus />Add Client
+                                        </button>
+                                    </div>
+                                    <div className="card">
+                                        {clients.length === 0 ? (
+                                            <div className="empty-state">
+                                                <Building2 className="icon-xl" />
+                                                <p>No clients yet. Click "Add Client" to get started.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="item-list">
+                                                {clients.map(client => (
+                                                    <div key={client.id} className="item">
+                                                        <div className="item-info">
+                                                            <h3>{client.companyName}</h3>
+                                                            <p>{client.contactName} - {client.engagementModel}</p>
+                                                        </div>
+                                                        <div className="item-actions">
+                                                            <button onClick={() => { setEditingClient(client); setShowClientForm(true); }} className="icon-btn edit"><Edit /></button>
+                                                            <button onClick={() => deleteClient(client.id)} className="icon-btn delete"><Trash2 /></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Bids Module */}
+                            {activeModule === 'bids' && (
+                                <div>
+                                    <div className="page-header">
+                                        <h2 className="page-title serif-font">Bid Tracker</h2>
+                                        <button onClick={() => setShowBidForm(true)} className="btn btn-primary">
+                                            <Plus />Add Bid
+                                        </button>
+                                    </div>
+                                    <div className="card">
+                                        {bids.length === 0 ? (
+                                            <div className="empty-state">
+                                                <Target className="icon-xl" />
+                                                <p>No bids yet. Click "Add Bid" to get started.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="table-container">
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Solicitation</th>
+                                                            <th>Agency</th>
+                                                            <th>Value</th>
+                                                            <th>Due Date</th>
+                                                            <th>Status</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {bids.map(bid => {
+                                                            const daysUntil = calculateDaysUntil(bid.dueDate);
+                                                            return (
+                                                                <tr key={bid.id}>
+                                                                    <td>
+                                                                        <div style={{fontWeight: 600}}>{bid.solicitationNumber}</div>
+                                                                        <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)'}}>{bid.title}</div>
+                                                                    </td>
+                                                                    <td>{bid.agencyName}</td>
+                                                                    <td>${parseFloat(bid.estimatedValue || 0).toLocaleString()}</td>
+                                                                    <td className={getCountdownClass(daysUntil)}>
+                                                                        {daysUntil !== null ? (daysUntil >= 0 ? `${daysUntil} days` : 'Overdue') : 'N/A'}
+                                                                    </td>
+                                                                    <td><span className={`badge ${bid.status === 'Won' ? 'green' : bid.status === 'Lost' ? 'red' : 'blue'}`}>{bid.status}</span></td>
+                                                                    <td>
+                                                                        <div style={{display: 'flex', gap: '0.5rem'}}>
+                                                                            <button onClick={() => { setEditingBid(bid); setShowBidForm(true); }} className="icon-btn edit"><Edit /></button>
+                                                                            <button onClick={() => deleteBid(bid.id)} className="icon-btn delete"><Trash2 /></button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Cap Statement & Supply Modules - Placeholder */}
+                            {['capstatement', 'supply'].includes(activeModule) && (
+                                <div className="card" style={{textAlign: 'center', padding: '3rem'}}>
+                                    <h2 className="page-title serif-font">
+                                        {activeModule === 'capstatement' ? 'Capability Statement' : 'Supply & PO Management'}
+                                    </h2>
+                                    <p style={{color: 'var(--text-secondary)'}}>Module coming soon</p>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+
+                    {/* Client Form Modal */}
+                    {showClientForm && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h3 className="modal-header serif-font">{editingClient ? 'Edit Client' : 'New Client'}</h3>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    saveClient({
+                                        id: editingClient?.id || `client_${Date.now()}`,
+                                        companyName: fd.get('companyName'),
+                                        contactName: fd.get('contactName'),
+                                        contactEmail: fd.get('contactEmail'),
+                                        contactPhone: fd.get('contactPhone'),
+                                        engagementModel: fd.get('engagementModel'),
+                                        status: fd.get('status'),
+                                        notes: fd.get('notes')
+                                    });
+                                }}>
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label className="form-label">Company Name *</label>
+                                            <input name="companyName" required defaultValue={editingClient?.companyName} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Contact Name *</label>
+                                            <input name="contactName" required defaultValue={editingClient?.contactName} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Email *</label>
+                                            <input name="contactEmail" type="email" required defaultValue={editingClient?.contactEmail} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Phone</label>
+                                            <input name="contactPhone" type="tel" defaultValue={editingClient?.contactPhone} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Engagement Model</label>
+                                            <select name="engagementModel" defaultValue={editingClient?.engagementModel || 'Managed Sourcing'} className="form-select">
+                                                <option>Managed Sourcing</option>
+                                                <option>Strategic Retainer</option>
+                                                <option>EOR</option>
+                                                <option>Hybrid</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Status</label>
+                                            <select name="status" defaultValue={editingClient?.status || 'Active'} className="form-select">
+                                                <option>Active</option>
+                                                <option>Pending</option>
+                                                <option>Terminated</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Notes</label>
+                                        <textarea name="notes" defaultValue={editingClient?.notes} className="form-textarea"></textarea>
+                                    </div>
+                                    <div className="form-actions">
+                                        <button type="submit" className="btn btn-primary"><Save />Save</button>
+                                        <button type="button" onClick={() => { setShowClientForm(false); setEditingClient(null); }} className="btn btn-secondary"><X />Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bid Form Modal */}
+                    {showBidForm && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h3 className="modal-header serif-font">{editingBid ? 'Edit Bid' : 'New Bid'}</h3>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    saveBid({
+                                        id: editingBid?.id || `bid_${Date.now()}`,
+                                        solicitationNumber: fd.get('solicitationNumber'),
+                                        title: fd.get('title'),
+                                        agencyName: fd.get('agencyName'),
+                                        setAside: fd.get('setAside'),
+                                        estimatedValue: fd.get('estimatedValue'),
+                                        dueDate: fd.get('dueDate'),
+                                        status: fd.get('status'),
+                                        notes: fd.get('notes')
+                                    });
+                                }}>
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label className="form-label">Solicitation Number *</label>
+                                            <input name="solicitationNumber" required defaultValue={editingBid?.solicitationNumber} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Agency Name *</label>
+                                            <input name="agencyName" required defaultValue={editingBid?.agencyName} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Set-Aside</label>
+                                            <select name="setAside" defaultValue={editingBid?.setAside || 'Full & Open'} className="form-select">
+                                                <option>SDVOSB</option>
+                                                <option>VetHUB</option>
+                                                <option>Small Business</option>
+                                                <option>Full & Open</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Estimated Value</label>
+                                            <input name="estimatedValue" type="number" step="0.01" defaultValue={editingBid?.estimatedValue} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Due Date *</label>
+                                            <input name="dueDate" type="date" required defaultValue={editingBid?.dueDate} className="form-input" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Status</label>
+                                            <select name="status" defaultValue={editingBid?.status || 'Identified'} className="form-select">
+                                                <option>Identified</option>
+                                                <option>Reviewing</option>
+                                                <option>Writing Proposal</option>
+                                                <option>Submitted</option>
+                                                <option>Under Evaluation</option>
+                                                <option>Won</option>
+                                                <option>Lost</option>
+                                                <option>No Bid</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Title *</label>
+                                        <input name="title" required defaultValue={editingBid?.title} className="form-input" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Notes</label>
+                                        <textarea name="notes" defaultValue={editingBid?.notes} className="form-textarea"></textarea>
+                                    </div>
+                                    <div className="form-actions">
+                                        <button type="submit" className="btn btn-primary"><Save />Save</button>
+                                        <button type="button" onClick={() => { setShowBidForm(false); setEditingBid(null); }} className="btn btn-secondary"><X />Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ImperioCommandCenter />, document.getElementById('root'));
+    </script>
+</body>
+</html>
